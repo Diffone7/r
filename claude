@@ -1,0 +1,222 @@
+-- Load the FluentUI library
+local FluentUI = loadstring(game:HttpGet("YOUR_FLUENT_UI_URL_HERE"))()
+
+-- Create main window
+local Window = FluentUI:CreateWindow("FluentUI Demo", UDim2.new(0, 550, 0, 600))
+
+-- Send welcome notification
+Window:Notify("Welcome!", "FluentUI library loaded successfully", 4)
+
+-- ========== TAB 1: Basic Controls ==========
+local Tab1 = Window:AddTab("Basic Controls", "rbxassetid://7733920644")
+
+Tab1:AddSection("🔘 Toggle Examples")
+
+local toggle1 = Tab1:AddToggle("Enable Feature A", false, function(value)
+    print("Feature A:", value)
+    Window:Notify("Toggle Changed", "Feature A is now " .. (value and "enabled" or "disabled"), 2)
+end)
+
+local toggle2 = Tab1:AddToggle("Enable Auto Farm", true, function(value)
+    print("Auto Farm:", value)
+end)
+
+Tab1:AddSection("🔵 Button Examples")
+
+Tab1:AddButton("Click Me!", function()
+    print("Button clicked!")
+    Window:Notify("Button Clicked", "You pressed the button!", 2)
+end)
+
+Tab1:AddButton("Execute Action", function()
+    print("Executing action...")
+    Window:Notify("Action", "Executing your command...", 3)
+end)
+
+Tab1:AddSection("📝 Label Example")
+
+local label1 = Tab1:AddLabel("This is a static label text")
+local label2 = Tab1:AddLabel("Dynamic label: Waiting for update...")
+
+-- Update label after 3 seconds
+task.delay(3, function()
+    label2:SetText("Dynamic label: Updated!")
+end)
+
+-- ========== TAB 2: Input Controls ==========
+local Tab2 = Window:AddTab("Input Controls", "rbxassetid://7733955511")
+
+Tab2:AddSection("⌨️ Text Input")
+
+local input1 = Tab2:AddInput("Username", "Enter your name...", function(text)
+    print("Username entered:", text)
+    Window:Notify("Input Received", "Username: " .. text, 2)
+end)
+
+local input2 = Tab2:AddInput("Custom Value", "Type something...", function(text)
+    print("Custom value:", text)
+end)
+
+Tab2:AddSection("🎚️ Slider Controls")
+
+local slider1 = Tab2:AddSlider("Speed", 0, 100, 50, function(value)
+    print("Speed:", value)
+end)
+
+local slider2 = Tab2:AddSlider("FOV", 60, 120, 90, function(value)
+    print("Field of View:", value)
+    Window:Notify("FOV Changed", "New FOV: " .. value, 1.5)
+end)
+
+local slider3 = Tab2:AddSlider("Volume", 0, 10, 5, function(value)
+    print("Volume level:", value)
+end)
+
+Tab2:AddButton("Set Speed to 75", function()
+    slider1:SetValue(75)
+    Window:Notify("Slider Updated", "Speed set to 75", 2)
+end)
+
+-- ========== TAB 3: Selection Controls ==========
+local Tab3 = Window:AddTab("Selections", "rbxassetid://7733964126")
+
+Tab3:AddSection("📋 Dropdown Menus")
+
+local dropdown1 = Tab3:AddDropdown("Select Weapon", {"Sword", "Bow", "Staff", "Dagger"}, "Sword", function(option)
+    print("Selected weapon:", option)
+    Window:Notify("Weapon Selected", "You chose: " .. option, 2)
+end)
+
+local dropdown2 = Tab3:AddDropdown("Game Mode", {"Easy", "Normal", "Hard", "Expert"}, "Normal", function(option)
+    print("Game mode:", option)
+end)
+
+local dropdown3 = Tab3:AddDropdown("Team", {"Red", "Blue", "Green", "Yellow"}, "Blue", function(option)
+    print("Team selected:", option)
+end)
+
+Tab3:AddButton("Change to Staff", function()
+    dropdown1:SetValue("Staff")
+    Window:Notify("Dropdown Updated", "Weapon changed to Staff", 2)
+end)
+
+Tab3:AddSection("🎨 Color Picker")
+
+local colorPicker1 = Tab3:AddColorPicker("Primary Color", Color3.fromRGB(0, 120, 215), function(color)
+    print("Primary color changed:", color)
+    Window:Notify("Color Changed", string.format("RGB(%d, %d, %d)", color.R * 255, color.G * 255, color.B * 255), 2)
+end)
+
+local colorPicker2 = Tab3:AddColorPicker("Secondary Color", Color3.fromRGB(255, 0, 0), function(color)
+    print("Secondary color:", color)
+end)
+
+-- ========== TAB 4: Keybinds ==========
+local Tab4 = Window:AddTab("Keybinds", "rbxassetid://7734053426")
+
+Tab4:AddSection("⌨️ Key Bindings")
+
+Tab4:AddLabel("Press the buttons below to set custom keybinds")
+
+local keybind1 = Tab4:AddKeybind("Toggle UI", Enum.KeyCode.RightShift, function(key)
+    print("Toggle UI keybind pressed:", key.Name)
+    Window:Notify("Keybind Activated", "You pressed: " .. key.Name, 2)
+end)
+
+local keybind2 = Tab4:AddKeybind("Fly Mode", Enum.KeyCode.F, function(key)
+    print("Fly mode activated with:", key.Name)
+    Window:Notify("Fly Mode", "Activated with key: " .. key.Name, 2)
+end)
+
+local keybind3 = Tab4:AddKeybind("Speed Boost", Enum.KeyCode.B, function(key)
+    print("Speed boost:", key.Name)
+end)
+
+Tab4:AddButton("Reset Fly Keybind to X", function()
+    keybind2:SetValue(Enum.KeyCode.X)
+    Window:Notify("Keybind Changed", "Fly mode keybind changed to X", 2)
+end)
+
+-- ========== TAB 5: Advanced Demo ==========
+local Tab5 = Window:AddTab("Advanced", "rbxassetid://7734068321")
+
+Tab5:AddSection("🔬 Advanced Features")
+
+Tab5:AddLabel("This tab demonstrates programmatic control")
+
+-- Demo: Toggle all features programmatically
+local masterToggle = Tab5:AddToggle("Master Switch", false, function(value)
+    toggle1:SetValue(value)
+    toggle2:SetValue(value)
+    Window:Notify("Master Switch", "All features " .. (value and "enabled" or "disabled"), 2)
+end)
+
+-- Demo: Random slider value
+Tab5:AddButton("Randomize FOV", function()
+    local randomFOV = math.random(60, 120)
+    slider2:SetValue(randomFOV)
+    Window:Notify("Randomized", "FOV set to " .. randomFOV, 2)
+end)
+
+-- Demo: Get current values
+Tab5:AddButton("Show Current Values", function()
+    print("=== Current Values ===")
+    print("Toggle 1:", toggle1:GetValue())
+    print("Slider 1:", slider1:GetValue())
+    print("Input 1:", input1:GetValue())
+    print("Dropdown 1:", dropdown1:GetValue())
+    print("Color Picker 1:", colorPicker1:GetValue())
+    print("Keybind 1:", keybind1:GetValue().Name)
+    
+    Window:Notify("Values Logged", "Check console for current values", 3)
+end)
+
+-- Demo: Cycle through dropdown options
+local teamIndex = 1
+local teams = {"Red", "Blue", "Green", "Yellow"}
+Tab5:AddButton("Cycle Teams", function()
+    teamIndex = (teamIndex % #teams) + 1
+    dropdown3:SetValue(teams[teamIndex])
+    Window:Notify("Team Changed", "Now on team: " .. teams[teamIndex], 2)
+end)
+
+-- Demo: Rainbow color animation
+local rainbowActive = false
+Tab5:AddToggle("Rainbow Color Effect", false, function(value)
+    rainbowActive = value
+    if value then
+        Window:Notify("Rainbow Mode", "Color animation started!", 2)
+        task.spawn(function()
+            local hue = 0
+            while rainbowActive do
+                hue = (hue + 0.01) % 1
+                colorPicker1:SetValue(Color3.fromHSV(hue, 1, 1))
+                task.wait(0.05)
+            end
+        end)
+    else
+        Window:Notify("Rainbow Mode", "Color animation stopped", 2)
+    end
+end)
+
+Tab5:AddSection("📊 Statistics")
+
+local statsLabel = Tab5:AddLabel("Stats: Initializing...")
+
+-- Update stats every 2 seconds
+task.spawn(function()
+    local count = 0
+    while true do
+        count = count + 1
+        statsLabel:SetText(string.format("Stats: Updated %d times | Time: %s", count, os.date("%H:%M:%S")))
+        task.wait(2)
+    end
+end)
+
+-- ========== Final Demo Notification ==========
+task.delay(1, function()
+    Window:Notify("Demo Ready", "All features loaded! Explore the tabs to see everything in action.", 5)
+end)
+
+print("FluentUI Example loaded successfully!")
+print("All tabs and features have been initialized.")
