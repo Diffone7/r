@@ -1,5 +1,5 @@
 -- Load the FluentUI library
-local FluentUI = loadstring(game:HttpGet("YOUR_FLUENT_UI_URL_HERE"))()
+local FluentUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/refs/heads/main/flidkt"))()
 
 -- Create main window
 local Window = FluentUI:CreateWindow("FluentUI Demo", UDim2.new(0, 550, 0, 600))
