@@ -1,0 +1,1311 @@
+local FluentUI = {}
+FluentUI.__index = FluentUI
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+
+FluentUI.Theme = {
+    Background = Color3.fromRGB(24, 24, 24),
+    Secondary = Color3.fromRGB(32, 32, 32),
+    Tertiary = Color3.fromRGB(40, 40, 40),
+    Accent = Color3.fromRGB(0, 120, 215),
+    AccentHover = Color3.fromRGB(0, 103, 192),
+    Text = Color3.fromRGB(255, 255, 255),
+    TextDim = Color3.fromRGB(200, 200, 200),
+    Border = Color3.fromRGB(60, 60, 60),
+    Success = Color3.fromRGB(16, 124, 16),
+    Warning = Color3.fromRGB(255, 185, 0),
+    Error = Color3.fromRGB(196, 43, 28),
+}
+
+local function Create(class, props)
+    local obj = Instance.new(class)
+    for k, v in pairs(props) do
+        if k ~= "Parent" then
+            obj[k] = v
+        end
+    end
+    obj.Parent = props.Parent
+    return obj
+end
+
+local function Tween(obj, props, duration)
+    return TweenService:Create(obj, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
+end
+
+local function MakeDraggable(frame, handle)
+    local dragging, dragStart, startPos
+    
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+end
+
+ function FluentUI:CreateWindow(title, size)
+    local window = {
+        Tabs = {},
+        ActiveTab = nil,
+        Notifications = {},
+        Elements = {},
+    }
+    
+    local screenGui = Create("ScreenGui", {
+        Name = "FluentUI",
+        Parent = CoreGui,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        ResetOnSpawn = false,
+    })
+    
+    local mainFrame = Create("Frame", {
+        Name = "MainFrame",
+        Size = size or UDim2.new(0, 550, 0, 600),
+        Position = UDim2.new(0.5, -275, 0.5, -300),
+        BackgroundColor3 = FluentUI.Theme.Background,
+        BorderSizePixel = 0,
+        Parent = screenGui,
+    })
+    
+    Create("UICorner", {
+        CornerRadius = UDim.new(0, 8),
+        Parent = mainFrame,
+    })
+    
+    local shadow = Create("ImageLabel", {
+        Name = "Shadow",
+        Size = UDim2.new(1, 40, 1, 40),
+        Position = UDim2.new(0, -20, 0, -20),
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://297774371",
+        ImageColor3 = Color3.new(0, 0, 0),
+        ImageTransparency = 0.5,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(25, 25, 275, 275),
+        ZIndex = 0,
+        Parent = mainFrame,
+    })
+    
+    local titleBar = Create("Frame", {
+        Name = "TitleBar",
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundColor3 = FluentUI.Theme.Secondary,
+        BorderSizePixel = 0,
+        Parent = mainFrame,
+    })
+    
+    Create("UICorner", {
+        CornerRadius = UDim.new(0, 8),
+        Parent = titleBar,
+    })
+    
+    Create("Frame", {
+        Size = UDim2.new(1, 0, 0, 8),
+        Position = UDim2.new(0, 0, 1, -8),
+        BackgroundColor3 = FluentUI.Theme.Secondary,
+        BorderSizePixel = 0,
+        Parent = titleBar,
+    })
+    
+    local titleLabel = Create("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -100, 1, 0),
+        Position = UDim2.new(0, 15, 0, 0),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = FluentUI.Theme.Text,
+        TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = Enum.Font.GothamBold,
+        Parent = titleBar,
+    })
+    
+    local closeButton = Create("TextButton", {
+        Name = "Close",
+        Size = UDim2.new(0, 40, 0, 40),
+        Position = UDim2.new(1, -40, 0, 0),
+        BackgroundTransparency = 1,
+        Text = "✕",
+        TextColor3 = FluentUI.Theme.Text,
+        TextSize = 16,
+        Font = Enum.Font.GothamBold,
+        Parent = titleBar,
+    })
+    
+    closeButton.MouseEnter:Connect(function()
+        Tween(closeButton, {BackgroundTransparency = 0, BackgroundColor3 = FluentUI.Theme.Error}):Play()
+    end)
+    
+    closeButton.MouseLeave:Connect(function()
+        Tween(closeButton, {BackgroundTransparency = 1}):Play()
+    end)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+    
+    MakeDraggable(mainFrame, titleBar)
+    
+    local tabContainer = Create("Frame", {
+        Name = "TabContainer",
+        Size = UDim2.new(0, 150, 1, -50),
+        Position = UDim2.new(0, 5, 0, 45),
+        BackgroundTransparency = 1,
+        Parent = mainFrame,
+    })
+    
+    local tabList = Create("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5),
+        Parent = tabContainer,
+    })
+    
+    local contentContainer = Create("Frame", {
+        Name = "Content",
+        Size = UDim2.new(1, -165, 1, -50),
+        Position = UDim2.new(0, 160, 0, 45),
+        BackgroundColor3 = FluentUI.Theme.Secondary,
+        BorderSizePixel = 0,
+        Parent = mainFrame,
+    })
+    
+    Create("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = contentContainer,
+    })
+    
+    local contentScroll = Create("ScrollingFrame", {
+        Size = UDim2.new(1, -10, 1, -10),
+        Position = UDim2.new(0, 5, 0, 5),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = FluentUI.Theme.Accent,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        Parent = contentContainer,
+    })
+    
+    Create("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 8),
+        Parent = contentScroll,
+    })
+    
+    Create("UIPadding", {
+        PaddingLeft = UDim.new(0, 8),
+        PaddingRight = UDim.new(0, 8),
+        PaddingTop = UDim.new(0, 8),
+        PaddingBottom = UDim.new(0, 8),
+        Parent = contentScroll,
+    })
+    
+    function window:AddTab(name, icon)
+        local tab = {
+            Name = name,
+            Elements = {},
+            Active = false,
+        }
+        
+        local tabButton = Create("TextButton", {
+            Name = name,
+            Size = UDim2.new(1, 0, 0, 36),
+            BackgroundColor3 = FluentUI.Theme.Tertiary,
+            BorderSizePixel = 0,
+            Text = "",
+            AutoButtonColor = false,
+            Parent = tabContainer,
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(0, 6),
+            Parent = tabButton,
+        })
+        
+        local tabLabel = Create("TextLabel", {
+            Size = UDim2.new(1, -40, 1, 0),
+            Position = UDim2.new(0, icon and 40 or 10, 0, 0),
+            BackgroundTransparency = 1,
+            Text = name,
+            TextColor3 = FluentUI.Theme.TextDim,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.Gotham,
+            Parent = tabButton,
+        })
+        
+        if icon then
+            Create("ImageLabel", {
+                Size = UDim2.new(0, 20, 0, 20),
+                Position = UDim2.new(0, 10, 0.5, -10),
+                BackgroundTransparency = 1,
+                Image = icon,
+                ImageColor3 = FluentUI.Theme.TextDim,
+                Parent = tabButton,
+            })
+        end
+        
+        local indicator = Create("Frame", {
+            Size = UDim2.new(0, 3, 0, 0),
+            Position = UDim2.new(0, 0, 0.5, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
+            BackgroundColor3 = FluentUI.Theme.Accent,
+            BorderSizePixel = 0,
+            Parent = tabButton,
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(1, 0),
+            Parent = indicator,
+        })
+        
+        function tab:Activate()
+            for _, t in pairs(window.Tabs) do
+                if t.Active then
+                    t:Deactivate()
+                end
+            end
+            
+            tab.Active = true
+            Tween(tabButton, {BackgroundColor3 = FluentUI.Theme.Accent}, 0.15):Play()
+            Tween(tabLabel, {TextColor3 = FluentUI.Theme.Text}):Play()
+            Tween(indicator, {Size = UDim2.new(0, 3, 1, -12)}):Play()
+            
+            for _, elem in pairs(contentScroll:GetChildren()) do
+                if elem:IsA("GuiObject") then
+                    elem.Visible = false
+                end
+            end
+            
+            for _, elem in pairs(tab.Elements) do
+                elem.Visible = true
+            end
+        end
+        
+        function tab:Deactivate()
+            tab.Active = false
+            Tween(tabButton, {BackgroundColor3 = FluentUI.Theme.Tertiary}, 0.15):Play()
+            Tween(tabLabel, {TextColor3 = FluentUI.Theme.TextDim}):Play()
+            Tween(indicator, {Size = UDim2.new(0, 3, 0, 0)}):Play()
+        end
+        
+        tabButton.MouseEnter:Connect(function()
+            if not tab.Active then
+                Tween(tabButton, {BackgroundColor3 = FluentUI.Theme.Secondary}):Play()
+            end
+        end)
+        
+        tabButton.MouseLeave:Connect(function()
+            if not tab.Active then
+                Tween(tabButton, {BackgroundColor3 = FluentUI.Theme.Tertiary}):Play()
+            end
+        end)
+        
+        tabButton.MouseButton1Click:Connect(function()
+            tab:Activate()
+        end)
+        
+        function tab:AddSection(title)
+            local section = Create("Frame", {
+                Name = "Section",
+                Size = UDim2.new(1, 0, 0, 30),
+                BackgroundTransparency = 1,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            Create("TextLabel", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                Text = title,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 16,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.GothamBold,
+                Parent = section,
+            })
+            
+            table.insert(tab.Elements, section)
+            return section
+        end
+        
+        function tab:AddToggle(text, default, callback)
+            local state = default or false
+            
+            local container = Create("Frame", {
+                Name = "Toggle",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = FluentUI.Theme.Tertiary,
+                BorderSizePixel = 0,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = container,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(1, -60, 1, 0),
+                Position = UDim2.new(0, 12, 0, 0),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                Parent = container,
+            })
+            
+            local toggleButton = Create("TextButton", {
+                Size = UDim2.new(0, 44, 0, 24),
+                Position = UDim2.new(1, -54, 0.5, -12),
+                BackgroundColor3 = state and FluentUI.Theme.Accent or FluentUI.Theme.Background,
+                BorderSizePixel = 0,
+                Text = "",
+                AutoButtonColor = false,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(1, 0),
+                Parent = toggleButton,
+            })
+            
+            local toggleCircle = Create("Frame", {
+                Size = UDim2.new(0, 18, 0, 18),
+                Position = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
+                BackgroundColor3 = FluentUI.Theme.Text,
+                BorderSizePixel = 0,
+                Parent = toggleButton,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(1, 0),
+                Parent = toggleCircle,
+            })
+            
+            local function toggle()
+                state = not state
+                Tween(toggleButton, {BackgroundColor3 = state and FluentUI.Theme.Accent or FluentUI.Theme.Background}):Play()
+                Tween(toggleCircle, {Position = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)}):Play()
+                if callback then
+                    callback(state)
+                end
+            end
+            
+            toggleButton.MouseButton1Click:Connect(toggle)
+            
+            container.MouseEnter:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Secondary}):Play()
+            end)
+            
+            container.MouseLeave:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Tertiary}):Play()
+            end)
+            
+            table.insert(tab.Elements, container)
+            
+            return {
+                SetValue = function(_, value)
+                    if state ~= value then
+                        toggle()
+                    end
+                end,
+                GetValue = function(_)
+                    return state
+                end
+            }
+        end
+        
+        function tab:AddButton(text, callback)
+            local container = Create("TextButton", {
+                Name = "Button",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = FluentUI.Theme.Accent,
+                BorderSizePixel = 0,
+                Text = "",
+                AutoButtonColor = false,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = container,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(1, -24, 1, 0),
+                Position = UDim2.new(0, 12, 0, 0),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.GothamBold,
+                Parent = container,
+            })
+            
+            container.MouseEnter:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.AccentHover}):Play()
+            end)
+            
+            container.MouseLeave:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Accent}):Play()
+            end)
+            
+            container.MouseButton1Click:Connect(function()
+                Tween(container, {Size = UDim2.new(1, -4, 0, 38)}, 0.1):Play()
+                task.wait(0.1)
+                Tween(container, {Size = UDim2.new(1, 0, 0, 40)}, 0.1):Play()
+                if callback then
+                    callback()
+                end
+            end)
+            
+            table.insert(tab.Elements, container)
+            return container
+        end
+        
+        function tab:AddSlider(text, min, max, default, callback)
+            local value = default or min
+            
+            local container = Create("Frame", {
+                Name = "Slider",
+                Size = UDim2.new(1, 0, 0, 60),
+                BackgroundColor3 = FluentUI.Theme.Tertiary,
+                BorderSizePixel = 0,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = container,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(1, -100, 0, 20),
+                Position = UDim2.new(0, 12, 0, 8),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                Parent = container,
+            })
+            
+            local valueLabel = Create("TextLabel", {
+                Size = UDim2.new(0, 80, 0, 20),
+                Position = UDim2.new(1, -92, 0, 8),
+                BackgroundTransparency = 1,
+                Text = tostring(value),
+                TextColor3 = FluentUI.Theme.Accent,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                Font = Enum.Font.GothamBold,
+                Parent = container,
+            })
+            
+            local sliderBack = Create("Frame", {
+                Size = UDim2.new(1, -24, 0, 4),
+                Position = UDim2.new(0, 12, 0, 40),
+                BackgroundColor3 = FluentUI.Theme.Background,
+                BorderSizePixel = 0,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(1, 0),
+                Parent = sliderBack,
+            })
+            
+            local sliderFill = Create("Frame", {
+                Size = UDim2.new((value - min) / (max - min), 0, 1, 0),
+                BackgroundColor3 = FluentUI.Theme.Accent,
+                BorderSizePixel = 0,
+                Parent = sliderBack,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(1, 0),
+                Parent = sliderFill,
+            })
+            
+            local sliderButton = Create("Frame", {
+                Size = UDim2.new(0, 12, 0, 12),
+                Position = UDim2.new((value - min) / (max - min), -6, 0.5, -6),
+                BackgroundColor3 = FluentUI.Theme.Text,
+                BorderSizePixel = 0,
+                Parent = sliderBack,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(1, 0),
+                Parent = sliderButton,
+            })
+            
+            local dragging = false
+            
+            sliderBack.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                end
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local pos = (Mouse.X - sliderBack.AbsolutePosition.X) / sliderBack.AbsoluteSize.X
+                    pos = math.clamp(pos, 0, 1)
+                    value = math.floor(min + (max - min) * pos)
+                    
+                    valueLabel.Text = tostring(value)
+                    sliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                    sliderButton.Position = UDim2.new(pos, -6, 0.5, -6)
+                    
+                    if callback then
+                        callback(value)
+                    end
+                end
+            end)
+            
+            table.insert(tab.Elements, container)
+            
+            return {
+                SetValue = function(_, newValue)
+                    value = math.clamp(newValue, min, max)
+                    local pos = (value - min) / (max - min)
+                    valueLabel.Text = tostring(value)
+                    sliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                    sliderButton.Position = UDim2.new(pos, -6, 0.5, -6)
+                end,
+                GetValue = function(_)
+                    return value
+                end
+            }
+        end
+        
+        function tab:AddDropdown(text, options, default, callback)
+            local selected = default or options[1]
+            local open = false
+            
+            local container = Create("Frame", {
+                Name = "Dropdown",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = FluentUI.Theme.Tertiary,
+                BorderSizePixel = 0,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = container,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(0.4, 0, 1, 0),
+                Position = UDim2.new(0, 12, 0, 0),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                Parent = container,
+            })
+            
+            local dropButton = Create("TextButton", {
+                Size = UDim2.new(0.55, 0, 0, 32),
+                Position = UDim2.new(0.43, 0, 0.5, -16),
+                BackgroundColor3 = FluentUI.Theme.Background,
+                BorderSizePixel = 0,
+                Text = selected,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 13,
+                Font = Enum.Font.Gotham,
+                AutoButtonColor = false,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = dropButton,
+            })
+            
+            local arrow = Create("TextLabel", {
+                Size = UDim2.new(0, 20, 1, 0),
+                Position = UDim2.new(1, -24, 0, 0),
+                BackgroundTransparency = 1,
+                Text = "▼",
+                TextColor3 = FluentUI.Theme.TextDim,
+                TextSize = 10,
+                Parent = dropButton,
+            })
+            
+            local dropdownList = Create("Frame", {
+                Size = UDim2.new(0.55, 0, 0, 0),
+                Position = UDim2.new(0.43, 0, 1, 5),
+                BackgroundColor3 = FluentUI.Theme.Background,
+                BorderSizePixel = 0,
+                ClipsDescendants = true,
+                Visible = false,
+                ZIndex = 10,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = dropdownList,
+            })
+            
+            local listLayout = Create("UIListLayout", {
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Parent = dropdownList,
+            })
+            
+            for _, option in ipairs(options) do
+                local optionButton = Create("TextButton", {
+                    Size = UDim2.new(1, 0, 0, 32),
+                    BackgroundColor3 = FluentUI.Theme.Background,
+                    BorderSizePixel = 0,
+                    Text = option,
+                    TextColor3 = FluentUI.Theme.Text,
+                    TextSize = 13,
+                    Font = Enum.Font.Gotham,
+                    AutoButtonColor = false,
+                    Parent = dropdownList,
+                })
+                
+                optionButton.MouseEnter:Connect(function()
+                    Tween(optionButton, {BackgroundColor3 = FluentUI.Theme.Accent}):Play()
+                end)
+                
+                optionButton.MouseLeave:Connect(function()
+                    Tween(optionButton, {BackgroundColor3 = FluentUI.Theme.Background}):Play()
+                end)
+                
+                optionButton.MouseButton1Click:Connect(function()
+                    selected = option
+                    dropButton.Text = option
+                    open = false
+                    Tween(dropdownList, {Size = UDim2.new(0.55, 0, 0, 0)}):Play()
+                    Tween(arrow, {Rotation = 0}):Play()
+                    task.wait(0.2)
+                    dropdownList.Visible = false
+                    if callback then
+                        callback(option)
+                    end
+                end)
+            end
+            
+            dropButton.MouseButton1Click:Connect(function()
+                open = not open
+                if open then
+                    dropdownList.Visible = true
+                    Tween(dropdownList, {Size = UDim2.new(0.55, 0, 0, math.min(#options * 32, 160))}):Play()
+                    Tween(arrow, {Rotation = 180}):Play()
+                else
+                    Tween(dropdownList, {Size = UDim2.new(0.55, 0, 0, 0)}):Play()
+                    Tween(arrow, {Rotation = 0}):Play()
+                    task.wait(0.2)
+                    dropdownList.Visible = false
+                end
+            end)
+            
+            table.insert(tab.Elements, container)
+            
+            return {
+                SetValue = function(_, value)
+                    selected = value
+                    dropButton.Text = value
+                end,
+                GetValue = function(_)
+                    return selected
+                end
+            }
+        end
+        
+        function tab:AddInput(text, placeholder, callback)
+            local container = Create("Frame", {
+                Name = "Input",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = FluentUI.Theme.Tertiary,
+                BorderSizePixel = 0,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = container,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(0.4, 0, 1, 0),
+                Position = UDim2.new(0, 12, 0, 0),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                Parent = container,
+            })
+            
+            local inputBox = Create("TextBox", {
+                Size = UDim2.new(0.55, 0, 0, 32),
+                Position = UDim2.new(0.43, 0, 0.5, -16),
+                BackgroundColor3 = FluentUI.Theme.Background,
+                BorderSizePixel = 0,
+                Text = "",
+                PlaceholderText = placeholder or "Enter text...",
+                PlaceholderColor3 = FluentUI.Theme.TextDim,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 13,
+                Font = Enum.Font.Gotham,
+                ClearTextOnFocus = false,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = inputBox,
+            })
+            
+            Create("UIPadding", {
+                PaddingLeft = UDim.new(0, 8),
+                PaddingRight = UDim.new(0, 8),
+                Parent = inputBox,
+            })
+            
+            inputBox.Focused:Connect(function()
+                Tween(inputBox, {BackgroundColor3 = FluentUI.Theme.Secondary}):Play()
+            end)
+            
+            inputBox.FocusLost:Connect(function(enterPressed)
+                Tween(inputBox, {BackgroundColor3 = FluentUI.Theme.Background}):Play()
+                if enterPressed and callback then
+                    callback(inputBox.Text)
+                end
+            end)
+            
+            container.MouseEnter:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Secondary}):Play()
+            end)
+            
+            container.MouseLeave:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Tertiary}):Play()
+            end)
+            
+            table.insert(tab.Elements, container)
+            
+            return {
+                SetValue = function(_, value)
+                    inputBox.Text = value
+                end,
+                GetValue = function(_)
+                    return inputBox.Text
+                end
+            }
+        end
+        
+        function tab:AddLabel(text)
+            local container = Create("Frame", {
+                Name = "Label",
+                Size = UDim2.new(1, 0, 0, 30),
+                BackgroundTransparency = 1,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.TextDim,
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                TextWrapped = true,
+                Parent = container,
+            })
+            
+            table.insert(tab.Elements, container)
+            
+            return {
+                SetText = function(_, newText)
+                    label.Text = newText
+                end
+            }
+        end
+        
+        function tab:AddColorPicker(text, default, callback)
+            local color = default or Color3.fromRGB(255, 255, 255)
+            local pickerOpen = false
+            
+            local container = Create("Frame", {
+                Name = "ColorPicker",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = FluentUI.Theme.Tertiary,
+                BorderSizePixel = 0,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = container,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(0.7, 0, 1, 0),
+                Position = UDim2.new(0, 12, 0, 0),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                Parent = container,
+            })
+            
+            local colorDisplay = Create("TextButton", {
+                Size = UDim2.new(0, 60, 0, 28),
+                Position = UDim2.new(1, -70, 0.5, -14),
+                BackgroundColor3 = color,
+                BorderSizePixel = 0,
+                Text = "",
+                AutoButtonColor = false,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = colorDisplay,
+            })
+            
+            Create("UIStroke", {
+                Color = FluentUI.Theme.Border,
+                Thickness = 1,
+                Parent = colorDisplay,
+            })
+            
+            local pickerFrame = Create("Frame", {
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0, 0, 1, 5),
+                BackgroundColor3 = FluentUI.Theme.Background,
+                BorderSizePixel = 0,
+                ClipsDescendants = true,
+                Visible = false,
+                ZIndex = 10,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = pickerFrame,
+            })
+            
+            local colorCanvas = Create("Frame", {
+                Size = UDim2.new(1, -20, 1, -60),
+                Position = UDim2.new(0, 10, 0, 10),
+                BackgroundColor3 = Color3.fromRGB(255, 0, 0),
+                BorderSizePixel = 0,
+                Parent = pickerFrame,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = colorCanvas,
+            })
+            
+            local saturationGradient = Create("UIGradient", {
+                Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+                },
+                Transparency = NumberSequence.new{
+                    NumberSequenceKeypoint.new(0, 0),
+                    NumberSequenceKeypoint.new(1, 1)
+                },
+                Parent = colorCanvas,
+            })
+            
+            local brightnessOverlay = Create("Frame", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Parent = colorCanvas,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = brightnessOverlay,
+            })
+            
+            Create("UIGradient", {
+                Transparency = NumberSequence.new{
+                    NumberSequenceKeypoint.new(0, 1),
+                    NumberSequenceKeypoint.new(1, 0)
+                },
+                Rotation = 90,
+                Parent = brightnessOverlay,
+            })
+            
+            local hueSlider = Create("Frame", {
+                Size = UDim2.new(1, -20, 0, 20),
+                Position = UDim2.new(0, 10, 1, -40),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BorderSizePixel = 0,
+                Parent = pickerFrame,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = hueSlider,
+            })
+            
+            Create("UIGradient", {
+                Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+                    ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+                    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+                    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+                    ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+                    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+                },
+                Parent = hueSlider,
+            })
+            
+            local hueSelector = Create("Frame", {
+                Size = UDim2.new(0, 4, 1, 4),
+                Position = UDim2.new(0, -2, 0, -2),
+                BackgroundColor3 = FluentUI.Theme.Text,
+                BorderSizePixel = 0,
+                Parent = hueSlider,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(1, 0),
+                Parent = hueSelector,
+            })
+            
+            local canvasSelector = Create("Frame", {
+                Size = UDim2.new(0, 12, 0, 12),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BorderSizePixel = 0,
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Parent = colorCanvas,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(1, 0),
+                Parent = canvasSelector,
+            })
+            
+            Create("UIStroke", {
+                Color = Color3.fromRGB(0, 0, 0),
+                Thickness = 2,
+                Parent = canvasSelector,
+            })
+            
+            local h, s, v = color:ToHSV()
+            
+            local function updateColor(newH, newS, newV)
+                h, s, v = newH or h, newS or s, newV or v
+                color = Color3.fromHSV(h, s, v)
+                colorDisplay.BackgroundColor3 = color
+                
+                local hueColor = Color3.fromHSV(h, 1, 1)
+                colorCanvas.BackgroundColor3 = hueColor
+                
+                if callback then
+                    callback(color)
+                end
+            end
+            
+            local draggingCanvas = false
+            local draggingHue = false
+            
+            colorCanvas.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    draggingCanvas = true
+                end
+            end)
+            
+            hueSlider.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    draggingHue = true
+                end
+            end)
+            
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    draggingCanvas = false
+                    draggingHue = false
+                end
+            end)
+            
+            UserInputService.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement then
+                    if draggingCanvas then
+                        local posX = math.clamp((Mouse.X - colorCanvas.AbsolutePosition.X) / colorCanvas.AbsoluteSize.X, 0, 1)
+                        local posY = math.clamp((Mouse.Y - colorCanvas.AbsolutePosition.Y) / colorCanvas.AbsoluteSize.Y, 0, 1)
+                        canvasSelector.Position = UDim2.new(posX, 0, posY, 0)
+                        updateColor(nil, posX, 1 - posY)
+                    elseif draggingHue then
+                        local posX = math.clamp((Mouse.X - hueSlider.AbsolutePosition.X) / hueSlider.AbsoluteSize.X, 0, 1)
+                        hueSelector.Position = UDim2.new(posX, -2, 0, -2)
+                        updateColor(posX, nil, nil)
+                    end
+                end
+            end)
+            
+            colorDisplay.MouseButton1Click:Connect(function()
+                pickerOpen = not pickerOpen
+                if pickerOpen then
+                    pickerFrame.Visible = true
+                    Tween(pickerFrame, {Size = UDim2.new(1, 0, 0, 200)}):Play()
+                else
+                    Tween(pickerFrame, {Size = UDim2.new(0, 0, 0, 0)}):Play()
+                    task.wait(0.2)
+                    pickerFrame.Visible = false
+                end
+            end)
+            
+            container.MouseEnter:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Secondary}):Play()
+            end)
+            
+            container.MouseLeave:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Tertiary}):Play()
+            end)
+            
+            table.insert(tab.Elements, container)
+            
+            return {
+                SetValue = function(_, newColor)
+                    local newH, newS, newV = newColor:ToHSV()
+                    updateColor(newH, newS, newV)
+                    
+                    canvasSelector.Position = UDim2.new(newS, 0, 1 - newV, 0)
+                    hueSelector.Position = UDim2.new(newH, -2, 0, -2)
+                end,
+                GetValue = function(_)
+                    return color
+                end
+            }
+        end
+        
+        function tab:AddKeybind(text, default, callback)
+            local key = default or Enum.KeyCode.E
+            local listening = false
+            
+            local container = Create("Frame", {
+                Name = "Keybind",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = FluentUI.Theme.Tertiary,
+                BorderSizePixel = 0,
+                Visible = false,
+                Parent = contentScroll,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 6),
+                Parent = container,
+            })
+            
+            local label = Create("TextLabel", {
+                Size = UDim2.new(0.6, 0, 1, 0),
+                Position = UDim2.new(0, 12, 0, 0),
+                BackgroundTransparency = 1,
+                Text = text,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Font = Enum.Font.Gotham,
+                Parent = container,
+            })
+            
+            local keybindButton = Create("TextButton", {
+                Size = UDim2.new(0, 80, 0, 28),
+                Position = UDim2.new(1, -90, 0.5, -14),
+                BackgroundColor3 = FluentUI.Theme.Background,
+                BorderSizePixel = 0,
+                Text = key.Name,
+                TextColor3 = FluentUI.Theme.Text,
+                TextSize = 12,
+                Font = Enum.Font.GothamBold,
+                AutoButtonColor = false,
+                Parent = container,
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 4),
+                Parent = keybindButton,
+            })
+            
+            local connection
+            
+            keybindButton.MouseButton1Click:Connect(function()
+                listening = true
+                keybindButton.Text = "..."
+                Tween(keybindButton, {BackgroundColor3 = FluentUI.Theme.Accent}):Play()
+                
+                connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                    if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+                        listening = false
+                        key = input.KeyCode
+                        keybindButton.Text = key.Name
+                        Tween(keybindButton, {BackgroundColor3 = FluentUI.Theme.Background}):Play()
+                        connection:Disconnect()
+                        
+                        if callback then
+                            callback(key)
+                        end
+                    end
+                end)
+            end)
+            
+            UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                if not gameProcessed and not listening and input.KeyCode == key and callback then
+                    callback(key)
+                end
+            end)
+            
+            container.MouseEnter:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Secondary}):Play()
+            end)
+            
+            container.MouseLeave:Connect(function()
+                Tween(container, {BackgroundColor3 = FluentUI.Theme.Tertiary}):Play()
+            end)
+            
+            table.insert(tab.Elements, container)
+            
+            return {
+                SetValue = function(_, newKey)
+                    key = newKey
+                    keybindButton.Text = key.Name
+                end,
+                GetValue = function(_)
+                    return key
+                end
+            }
+        end
+        
+        table.insert(window.Tabs, tab)
+        
+        if #window.Tabs == 1 then
+            tab:Activate()
+        end
+        
+        return tab
+    end
+    
+    function window:Notify(title, message, duration)
+        duration = duration or 3
+        
+        local notification = Create("Frame", {
+            Size = UDim2.new(0, 300, 0, 0),
+            Position = UDim2.new(1, -310, 1, 10),
+            BackgroundColor3 = FluentUI.Theme.Secondary,
+            BorderSizePixel = 0,
+            ClipsDescendants = true,
+            Parent = screenGui,
+        })
+        
+        Create("UICorner", {
+            CornerRadius = UDim.new(0, 8),
+            Parent = notification,
+        })
+        
+        local titleLabel = Create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 24),
+            Position = UDim2.new(0, 10, 0, 8),
+            BackgroundTransparency = 1,
+            Text = title,
+            TextColor3 = FluentUI.Theme.Text,
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Font = Enum.Font.GothamBold,
+            Parent = notification,
+        })
+        
+        local messageLabel = Create("TextLabel", {
+            Size = UDim2.new(1, -20, 0, 0),
+            Position = UDim2.new(0, 10, 0, 32),
+            BackgroundTransparency = 1,
+            Text = message,
+            TextColor3 = FluentUI.Theme.TextDim,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top,
+            Font = Enum.Font.Gotham,
+            TextWrapped = true,
+            AutomaticSize = Enum.AutomaticSize.Y,
+            Parent = notification,
+        })
+        
+        local totalHeight = 48 + messageLabel.AbsoluteSize.Y
+        
+        Tween(notification, {
+            Size = UDim2.new(0, 300, 0, totalHeight),
+            Position = UDim2.new(1, -310, 1, -totalHeight - 10 - (#window.Notifications * (totalHeight + 10)))
+        }, 0.3):Play()
+        
+        table.insert(window.Notifications, notification)
+        
+        task.delay(duration, function()
+            Tween(notification, {
+                Position = UDim2.new(1, 10, notification.Position.Y.Scale, notification.Position.Y.Offset)
+            }, 0.3):Play()
+            
+            task.wait(0.3)
+            notification:Destroy()
+            
+            for i, notif in ipairs(window.Notifications) do
+                if notif == notification then
+                    table.remove(window.Notifications, i)
+                    break
+                end
+            end
+        end)
+    end
+    
+    return window
+end
+
+return FluentUI
