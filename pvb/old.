@@ -1,0 +1,586 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local BuyItem = ReplicatedStorage.Remotes.BuyItem 
+local BuyGear = ReplicatedStorage.Remotes.BuyGear 
+local EquipBest = ReplicatedStorage.Remotes.EquipBest 
+local Players = game:GetService("Players")
+local isVisible = true
+local TweenService = game:GetService("TweenService")
+local GlobalEnv = (typeof(getgenv) == "function" and getgenv()) or _G
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local Plots = Workspace.Plots
+local BuyRow = ReplicatedStorage.Remotes.BuyRow
+local BuyPlatform = ReplicatedStorage.Remotes.BuyPlatform 
+local PROMPT_PATH = workspace.ScriptedMap.Event.EventRewards.TalkPart.ProximityPrompt
+local INTERACT_KEY_STRING = "E" 
+local TWEEN_TIME = 1
+local TWEEN_INFO = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+
+
+
+
+
+
+
+
+
+
+
+local FavoriteItemRemote = ReplicatedStorage.Remotes.FavoriteItem
+local Rarity = {"Secret","Limited","Godly","Mythic","Legendary","Epic","Rare"}
+
+local function checkBackpack()
+
+    local backpack = LocalPlayer.Backpack
+    for _, tool in pairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") and string.find(tool.Name, "kg", 1, true) then
+            
+            local NonHandlePart = nil
+            for _, child in pairs(tool:GetChildren()) do
+                if child.Name ~= "Handle" then
+                    NonHandlePart = child
+                    break
+                end
+            end
+            
+            if NonHandlePart then
+                local rarityText = pcall(function()
+                    local rarityLabel = NonHandlePart.Hitbox.BrainrotToolUI.Rarity
+                    if rarityLabel and rarityLabel:IsA("TextLabel") then
+                        return rarityLabel.Text
+                    end
+                end)
+                
+                if rarityText[1] and rarityText[2] and rarityText[2] == REQUIRED_RARITY then
+                    local itemID = tool.ID 
+                    if itemID and FavoriteItemRemote then
+                        FavoriteItemRemote:FireServer(itemID)
+                    end
+                end
+            end
+        end
+    end
+end
+checkBackpack()
+
+
+
+
+
+
+
+
+
+
+--local PRICE_ORDER = { "$100k", "$2.5m", "$10m" }
+
+
+--create window
+local Window = Fluent:CreateWindow({
+    Title = "Pvb - ",
+    SubTitle = "",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+--tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "settings" }),
+    Event = Window:AddTab({ Title = "Event", Icon = "settings" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+    Tabs.Main:AddButton({ -- discord
+        Title = "dat gay Discord Server",
+        Description = "click to copy",
+        Callback = function()
+			setclipboard("https://discord.gg/xFTxWPuysM")
+			Fluent:Notify({
+				Title = "Discord Server",
+				Content = "Copied to clipboard.",
+				Duration = 5
+			})
+        end
+    })
+    --get stock count from shop
+local function GetStockCount(stockText)
+    local countStr = string.match(stockText, "x(%d+)")
+    if countStr then
+        return tonumber(countStr) or 0
+    end
+    return 0
+end
+    local Dropdown = Tabs.Main:AddDropdown("seed",{
+        Title = "Select seed to buy",
+        Values = {"King Limone Seed", "Mr Carrot Seed", "Carnivorous Seed", "Shroombino Seed", "Tomatrio Seed", "Mango Seed","Cactus Seed", "Sunflower Seed", "Dragon fruit Seed", "Strawberry Seed", "Eggplant Seed", "Watermelon Seed", "Grape Seed", "Cocotank Seed", "Pumpkin Seed"},
+        Multi = true,
+        Default = {"King Limone Seed", "Mr Carrot Seed", "Carnivorous Seed", "Shroombino Seed", "Tomatrio Seed", "Mango Seed"},
+    })
+
+    Dropdown:OnChanged(function(Value)
+                local Values = {}
+        for Value, State in next, Value do
+            table.insert(Values, Value)
+        end
+        GlobalEnv.Seed = Value
+    end)
+
+    local MultiDropdown = Tabs.Main:AddDropdown("gear",{
+        Title = "Gear to buy",
+        Values = {"Water Bucket", "Frost Grenade", "Carrot Launcher", "Banana Gun", "Frost Blower"},
+        Multi = true,
+        Default = {"Water Bucket", "Frost Grenade", "Frost Blower"},
+    })
+
+    MultiDropdown:OnChanged(function(Value)
+        local Values = {}
+        for Value, State in next, Value do
+            table.insert(Values, Value)
+        end
+		GlobalEnv.Gear = Value
+    end)
+
+Tabs.Main:AddToggle("autobuyseed"	, {
+		Title = "Auto buy seed selected",
+		Default = true ,
+		Callback = function(Value)
+			GlobalEnv.Seeds = Value
+		end
+})
+
+coroutine.wrap(function()
+    while true do
+        task.wait() 
+        if GlobalEnv.Seeds == true and GlobalEnv.Seed then
+            local ShopFrames = LocalPlayer.PlayerGui:FindFirstChild("Main")
+                        and LocalPlayer.PlayerGui.Main:FindFirstChild("Seeds")
+                        and LocalPlayer.PlayerGui.Main.Seeds:FindFirstChild("Frame")
+                        and LocalPlayer.PlayerGui.Main.Seeds.Frame:FindFirstChild("ScrollingFrame")
+-- check if shop frame exists
+            if ShopFrames then
+                for itemNames, states in pairs(GlobalEnv.Seed) do -- check all items
+                    if states then
+                        local itemUIs = ShopFrames:FindFirstChild(itemNames) -- check item selected
+                        if itemUIs then
+                            local stockTextLabels = itemUIs:FindFirstChild("Stock")
+                            if stockTextLabels and stockTextLabels:IsA("TextLabel") then
+                                local stockCount = GetStockCount(stockTextLabels.Text)
+                            -- buy item if stock available
+                                for i = 1, stockCount do
+                                    BuyItem:FireServer(itemNames, true)
+                                    task.wait(0.05) 
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)()
+Tabs.Main:AddToggle("autobuygear"	, {
+		Title = "Auto buy gear selected",
+		Default = true ,
+		Callback = function(Value)
+			GlobalEnv.Gears = Value
+		end
+})
+
+coroutine.wrap(function()
+    while true do
+        task.wait(2) 
+        if GlobalEnv.Gears == true and GlobalEnv.Gear then
+            local GearsFrame = LocalPlayer.PlayerGui:FindFirstChild("Main")
+                        and LocalPlayer.PlayerGui.Main:FindFirstChild("Gears")
+                        and LocalPlayer.PlayerGui.Main.Gears:FindFirstChild("Frame")
+                        and LocalPlayer.PlayerGui.Main.Gears.Frame:FindFirstChild("ScrollingFrame")
+            
+            if GearsFrame then
+                for itemName, state in pairs(GlobalEnv.Gear) do
+                    if state then
+                        local itemUI = GearsFrame:FindFirstChild(itemName)
+                        if itemUI then
+                            local stockTextLabel = itemUI:FindFirstChild("Stock")
+
+                            if stockTextLabel and stockTextLabel:IsA("TextLabel") then
+
+                                local stockCount = GetStockCount(stockTextLabel.Text)
+                                
+                                for i = 1, stockCount do
+                                    BuyGear:FireServer(itemName, true)
+                                    task.wait(0.2) 
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)()
+Tabs.Main:AddToggle(	"autoequipt"	, {
+		Title = "Auto equip best brainrot",
+		Default = false ,
+		Callback = function(Value)
+			GlobalEnv.equipt = Value
+		end
+})
+    
+    local Slider = Tabs.Main:AddSlider("time",{
+        Title = "Time (s)",
+        Description = "Second to wait before equip best brainrot again.",
+        Default = 60,
+        Min = 10,
+        Max = 600,
+        Rounding = 1,
+        Callback = function(Value)
+            GlobalEnv.time = Value
+        end
+    })
+
+    Slider:OnChanged(function(Value)
+        GlobalEnv.time = Value
+    end)
+
+coroutine.wrap(function()
+    while true do
+        wait(0.1)
+        if GlobalEnv.equipt == true then
+            EquipBest:Fire()
+            wait(GlobalEnv.time or 60)
+        end
+    end
+end)()
+
+local function FindPlayerPlot()
+    local playerName = LocalPlayer.DisplayName
+    local namePlot = nil
+    
+    if not Plots then
+        print("error: 'Plots' folder not found in Workspace.")
+        return nil
+    end
+
+    for _, plot in ipairs(Plots:GetChildren()) do
+        local plotName = plot.Name
+        
+        if plot:IsA("Model") or plot:IsA("Folder") then
+            local textLabel = plot:FindFirstChild("PlayerSign")
+                and plot.PlayerSign:FindFirstChild("BillboardGui")
+                and plot.PlayerSign.BillboardGui:FindFirstChild("TextLabel")
+
+            if textLabel and textLabel:IsA("TextLabel") then
+                local plotOwnerName = textLabel.Text
+                
+                if plotOwnerName == playerName then
+                    namePlot = plotName
+                    return namePlot
+                end
+            end
+        end
+    end
+end
+
+
+local function FindPlatformPricePlant(plotNumber)
+    if not plotNumber or type(plotNumber) ~= "string" or tonumber(plotNumber) == nil then
+        print("error: A valid Plot number (string format) is required to find the plant.")
+        return
+    end
+
+    local plot = Plots:FindFirstChild(plotNumber)
+    
+    if not plot then
+        print("error: Plot " .. plotNumber .. " not found.")
+        return
+    end
+    
+    local plantsFolder = plot:FindFirstChild("Plants")
+
+    if not plantsFolder then
+        print("error: 'Plants' folder not found in Plot " .. plotNumber)
+        return
+    end
+
+    -- Loop through all Children in the Plants folder
+    for _, plant in ipairs(plantsFolder:GetChildren()) do
+        local plantName = plant.Name
+
+        -- Filter: only accept names that are natural numbers > 1
+        local plantNumber = tonumber(plantName)
+        
+        if plantNumber and plantNumber > 1 and math.floor(plantNumber) == plantNumber then
+
+            -- Find PlatformPrice in the plant
+            local pricePlatform = plant:FindFirstChild("PlatformPrice")
+            
+            if pricePlatform then
+                return plantName
+            end
+        end
+    end
+end
+
+Tabs.Main:AddToggle(	"autobuyrows"	, {
+		Title = "Auto buy rows",
+		Default = false ,
+		Callback = function(Value)
+			GlobalEnv.abc = Value
+		end
+})
+coroutine.wrap(function()
+    while true do
+        task.wait(1) 
+        if GlobalEnv.abc == true then
+            local playerPlot = FindPlayerPlot()
+            local Rows = workspace.Plots[playerPlot].Rows
+            if not Rows["2"]:FindFirstChild("Lawn Mower") then
+                BuyRow:FireServer(2) end
+                if not Rows["3"]:FindFirstChild("Lawn Mower") then
+                    BuyRow:FireServer(3) end
+                if not Rows["4"]:FindFirstChild("Lawn Mower") then
+                    BuyRow:FireServer(4) end
+                if not Rows["5"]:FindFirstChild("Lawn Mower") then
+                    BuyRow:FireServer(5) end
+                if not Rows["6"]:FindFirstChild("Lawn Mower") then
+                    BuyRow:FireServer(6) end
+                if not Rows["7"]:FindFirstChild("Lawn Mower") then
+                    BuyRow:FireServer(7) end
+                task.wait(0.1)
+        end
+    end
+end)()
+
+Tabs.Main:AddToggle(	"autobuyplatforms"	, {
+		Title = "Auto buy platforms",
+		Default = false ,
+		Callback = function(Value)
+			GlobalEnv.plat = Value
+		end
+})
+
+coroutine.wrap(function()
+    while true do
+        task.wait(1) 
+        if GlobalEnv.plat == true then
+            local playerPlot = FindPlayerPlot()
+            if playerPlot then
+                local plantNumber = FindPlatformPricePlant(playerPlot)
+                if plantNumber then 
+                    BuyPlatform:FireServer(plantNumber)
+                    task.wait(0.1)
+                end
+            end
+        end
+    end
+end)()
+
+
+
+
+
+
+
+
+
+
+
+
+Tabs.Event:AddToggle(	"autoclaim"	, {
+		Title = "Auto claim event reward",
+		Default = false ,
+		Callback = function(Value)
+			GlobalEnv.autoclaim = Value
+		end
+})
+local function FirstInteract()
+    local character = LocalPlayer.Character
+    local camera = Workspace.CurrentCamera
+    
+    if not character or not camera then
+        return
+    end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        return
+    end
+    if not PROMPT_PATH or not PROMPT_PATH:IsA("ProximityPrompt") then
+        return
+    end
+    local originalCFrame = root.CFrame
+    root.CFrame = CFrame.new(-155.11795, 13.5628519, 1029.30005, 0.6862306, -5.54227739e-08, 0.727384031, 5.63844651e-08, 1, 2.30002701e-08, -0.727384031, 2.52296708e-08, 0.6862306)
+    task.wait(0.1)
+    local targetCameraCFrame = CFrame.new(root.Position) * CFrame.new(-155.11795, 13.5628519, 1029.30005, 0.6862306, -5.54227739e-08, 0.727384031, 5.63844651e-08, 1, 2.30002701e-08, -0.727384031, 2.52296708e-08, 0.6862306).Rotation
+    camera.CameraType = Enum.CameraType.Scriptable
+    local tween = TweenService:Create(camera, TWEEN_INFO, {CFrame = targetCameraCFrame})
+    tween:Play()
+    task.wait(TWEEN_TIME)
+    camera.CameraType = Enum.CameraType.Custom
+    local holdDuration = PROMPT_PATH.HoldDuration or 0.15
+    local vInputManager = game:GetService("VirtualInputManager")
+    vInputManager:SendKeyEvent(true, INTERACT_KEY_STRING, false, game)
+    task.wait(holdDuration + 0.1)
+    vInputManager:SendKeyEvent(false, INTERACT_KEY_STRING, false, game)
+    task.wait(0.1)
+    vInputManager:SendKeyEvent(true, INTERACT_KEY_STRING, false, game)
+    task.wait(holdDuration + 0.1)
+    vInputManager:SendKeyEvent(false, INTERACT_KEY_STRING, false, game)
+    task.wait(0.1)
+    root.CFrame = originalCFrame
+end
+
+coroutine.wrap(function()
+    while true do
+        task.wait(5) 
+        if Workspace.ScriptedMap.Event.EventRewards.TalkPart.ProximityPrompt.ActionText == "Talk" and GlobalEnv.autoclaim == true then
+            FirstInteract()
+        break
+        end
+    end
+end)()
+local function AutoInteract()
+    local character = LocalPlayer.Character
+    local camera = Workspace.CurrentCamera
+    
+    if not character or not camera then
+        return
+    end
+
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then
+        return
+    end
+    if not PROMPT_PATH or not PROMPT_PATH:IsA("ProximityPrompt") then
+        return
+    end
+    local originalCFrame = root.CFrame
+    root.CFrame = CFrame.new(-155.11795, 13.5628519, 1029.30005, 0.6862306, -5.54227739e-08, 0.727384031, 5.63844651e-08, 1, 2.30002701e-08, -0.727384031, 2.52296708e-08, 0.6862306)
+    task.wait(0.1)
+    local targetCameraCFrame = CFrame.new(root.Position) * CFrame.new(-155.11795, 13.5628519, 1029.30005, 0.6862306, -5.54227739e-08, 0.727384031, 5.63844651e-08, 1, 2.30002701e-08, -0.727384031, 2.52296708e-08, 0.6862306).Rotation
+    camera.CameraType = Enum.CameraType.Scriptable
+    local tween = TweenService:Create(camera, TWEEN_INFO, {CFrame = targetCameraCFrame})
+    tween:Play()
+    task.wait(TWEEN_TIME)
+    camera.CameraType = Enum.CameraType.Custom
+    local holdDuration = PROMPT_PATH.HoldDuration or 0.15 
+    local vInputManager = game:GetService("VirtualInputManager")
+    vInputManager:SendKeyEvent(true, INTERACT_KEY_STRING, false, game)
+    task.wait(holdDuration + 0.1)
+    vInputManager:SendKeyEvent(false, INTERACT_KEY_STRING, false, game)
+    task.wait(0.1)
+    root.CFrame = originalCFrame
+end
+
+
+coroutine.wrap(function()
+    while true do
+        task.wait(5) 
+        if Workspace.ScriptedMap.Event.EventRewards.TalkPart.ProximityPrompt.ActionText == "Claim" and GlobalEnv.autoclaim == true then
+            AutoInteract()
+        end
+    end
+end)()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("github.com")
+SaveManager:SetFolder("github.com/Diffone7")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+
+Window:SelectTab(1)
+
+Fluent:Notify({
+    Title = "Fluent",
+    Content = "The script has been loaded.",
+    Duration = 8
+})
+
+SaveManager:LoadAutoloadConfig()
+        local VirtualUser = cloneref(game:GetService("VirtualUser"))
+        Players.LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end) -- anti afk
+    local GuiService = game:GetService("GuiService")
+    GuiService.ErrorMessageChanged:Connect(function()
+        local TeleportService = game:GetService("TeleportService")
+        local placeId = game.PlaceId
+        TeleportService:Teleport(placeId, LocalPlayer)
+    end) -- auto rejoin on kick
+    -- toggle button
+local function a(b,c,d,e)local f=TweenService:Create(b,c,d)f:Play()if e then local g;g=f.Completed:Connect(function(h)if h==Enum.PlaybackState.Completed then e()g:Disconnect()end end)end;return f end;local i=game:GetService("CoreGui")local j=Instance.new("ScreenGui")local k=Instance.new("TextButton")local l=Instance.new("UICorner")j.Parent=i;j.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;k.Parent=j;k.BackgroundColor3=Color3.fromRGB(50,50,50)k.BorderColor3=Color3.fromRGB(0,0,0)k.BorderSizePixel=0;k.Position=UDim2.new(0.136,0,0.216,0)k.Size=UDim2.new(0,45,0,45)k.Font=Enum.Font.FredokaOne;k.Text="ON"k.TextColor3=Color3.fromRGB(192,192,192)k.TextSize=18.000;k.Draggable=true;l.Parent=k;l.CornerRadius=UDim.new(0,8)local m=nil;local n=nil;k.MouseEnter:Connect(function()if m then m:Cancel()end;m=a(k,TweenInfo.new(0.11,Enum.EasingStyle.Cubic,Enum.EasingDirection.Out),{BackgroundColor3=Color3.fromRGB(65,65,65),Size=UDim2.new(0,47,0,47)})end)k.MouseLeave:Connect(function()if m then m:Cancel()end;m=a(k,TweenInfo.new(0.11,Enum.EasingStyle.Cubic,Enum.EasingDirection.Out),{BackgroundColor3=Color3.fromRGB(50,50,50),Size=UDim2.new(0,45,0,45)})end)k.MouseButton1Down:Connect(function()if n then n:Cancel()end;n=a(k,TweenInfo.new(0.07,Enum.EasingStyle.Back,Enum.EasingDirection.In),{Size=UDim2.new(0,43,0,43)})end)k.MouseButton1Up:Connect(function()if n then n:Cancel()end;n=a(k,TweenInfo.new(0.09,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.new(0,47,0,47)})end)k.MouseButton1Click:Connect(function()isVisible=not isVisible;k.Text=isVisible and"ON"or"OFF"k.TextColor3=isVisible and Color3.fromRGB(120,255,120)or Color3.fromRGB(255,120,120)Window:Minimize()end)
