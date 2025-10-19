@@ -1,3 +1,45 @@
+
+
+
+--[[]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
@@ -29,42 +71,6 @@ local TWEEN_INFO = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Sine, Enum.EasingD
 
 
 
-local FavoriteItemRemote = ReplicatedStorage.Remotes.FavoriteItem
-local Rarity = {"Secret","Limited","Godly","Mythic","Legendary","Epic","Rare"}
-
-local function checkBackpack()
-
-    local backpack = LocalPlayer.Backpack
-    for _, tool in pairs(backpack:GetChildren()) do
-        if tool:IsA("Tool") and string.find(tool.Name, "kg", 1, true) then
-            
-            local NonHandlePart = nil
-            for _, child in pairs(tool:GetChildren()) do
-                if child.Name ~= "Handle" then
-                    NonHandlePart = child
-                    break
-                end
-            end
-            
-            if NonHandlePart then
-                local rarityText = pcall(function()
-                    local rarityLabel = NonHandlePart.Hitbox.BrainrotToolUI.Rarity
-                    if rarityLabel and rarityLabel:IsA("TextLabel") then
-                        return rarityLabel.Text
-                    end
-                end)
-                
-                if rarityText[1] and rarityText[2] and rarityText[2] == REQUIRED_RARITY then
-                    local itemID = tool.ID 
-                    if itemID and FavoriteItemRemote then
-                        FavoriteItemRemote:FireServer(itemID)
-                    end
-                end
-            end
-        end
-    end
-end
-checkBackpack()
 
 
 
@@ -75,7 +81,20 @@ checkBackpack()
 
 
 
---local PRICE_ORDER = { "$100k", "$2.5m", "$10m" }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 --create window
