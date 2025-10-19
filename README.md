@@ -193,7 +193,9 @@ getgenv().ReconfigureUltimateFPS({
 ### Xeno
 
 [![Xeno Logo](https://i.pinimg.com/280x280_RS/06/ff/27/06ff27ea42bcae0978c4c95a49735670.jpg)](https://xeno.onl)
+
 **Website:** [https://xeno.onl](https://xeno.onl)
+
 **Discord:** [https://discord.gg/xe-no](https://discord.gg/xe-no)
 
 > *Đã thử nghiệm trên Xeno — hoạt động ổn định, tương thích tốt với các tính năng unlock FPS và batch processing.*
@@ -203,8 +205,11 @@ getgenv().ReconfigureUltimateFPS({
 ### DeltaX
 
 [![DeltaX Logo](https://pbs.twimg.com/profile_images/1724003690724655104/R4JmSAW7_400x400.jpg)](https://deltaexploits.gg)
+
 **Website:** [https://deltaexploits.gg](https://deltaexploits.gg)
+
 **Discord (main):** [https://discord.gg/deltax](https://discord.gg/deltax)
+
 **Discord (alt):** [https://discord.gg/hW338Ugn3A](https://discord.gg/hW338Ugn3A) 
 
 > *Đã kiểm thử trên DeltaX — tương thích, hoạt động ổn định với các tính năng safe destruction và progressive loading.*
