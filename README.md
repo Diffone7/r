@@ -143,7 +143,7 @@
 
 ```lua
 -- Step 1: Execute in your executor
-loadstring(game:HttpGet("https://raw.githubusercontent.com/<yourname>/Roblox-FPS-Booster/main/ultimatefps.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/Roblox-FPS-Booster/main/ultimatefps.lua"))()
 
 -- Step 2: Wait for optimization
 -- Output: "OPTIMIZATION COMPLETE"
@@ -238,7 +238,7 @@ Bạn có thể **tự do sử dụng, chỉnh sửa và phân phối** miễn l
 
 ## 🌐 Links
 
-* 🔗 **GitHub Repository:** `https://github.com/<YourName>/Roblox-FPS-Booster`
+* 🔗 **GitHub Repository:** `https://github.com/Diffone7/r/Roblox-FPS-Booster`
 * 📜 **License:** [MIT](LICENSE)
 
 ---
