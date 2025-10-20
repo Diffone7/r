@@ -1,11 +1,11 @@
-# ⚡ Ultimate FPS Booster for Roblox (Luau Script)
+# ⚡ GraphicsTuner for Roblox (Luau Script)
 > 🚀 Boost your FPS, reduce lag, and optimize graphics intelligently — for any Roblox game.  
-> 💬 *Tối ưu FPS, giảm giật lag, và cải thiện hiệu năng tổng thể cho mọi trò chơi Roblox.*
+> 💬 *Tối ưu FPS, giảm giật lag, và cải thiện hiệu năng tổng thể cho Roblox.*
 
 ---
 
 ## 🧠 Overview / Tổng quan
-**Ultimate FPS Booster** is a lightweight and safe Roblox optimization script written in **Luau**, designed to improve game performance without breaking core gameplay mechanics.
+**GraphicsTuner** is a lightweight and safe Roblox optimization script written in **Luau**, designed to improve game performance without breaking core gameplay mechanics.
 
 > Script này được viết bằng **Luau**, tập trung vào việc **tăng FPS mà không ảnh hưởng đến gameplay** hoặc gây lỗi hiển thị.
 
@@ -145,83 +145,60 @@
 -- Step 1: Execute in your executor
 
 ```lua
-getgenv().UltimateFPS = {
+getgenv().GraphicsTuner = {
     Settings = {
-        -- Graphics Settings (Cài đặt đồ họa)
+        GraphicsDestruction = {
+            RemoveParticles = true,
+            RemoveTrails = true,
+            RemoveBeams = true,
+            RemoveLights = true,
+            RemoveTextures = true,
+            RemoveDecals = true,
+            RemoveClothes = true,
+            RemoveAccessories = true,
+            RemoveSky = true,
+            RemoveAtmosphere = true,
+            RemoveClouds = true,
+            RemovePostEffects = true,
+            MuteSounds = true,
+            DisableExplosions = true,
+        },
         Graphics = {
-            MinimalQuality = true,           -- Level 01 quality
-            DisableShadows = true,           -- Tắt bóng đổ
-            DisableReflections = true,       -- Tắt phản chiếu
-            SimplifyMaterials = true,        -- Đơn giản hóa vật liệu
-            RemoveTextures = true,           -- Xóa textures
-            DisablePostProcessing = true,    -- Tắt post effects
-            ForceCompatibilityMode = true,   -- Chế độ tương thích
-            DisableAntiAliasing = true,      -- Tắt khử răng cưa
-            MaximizeBrightness = true,       -- Tăng độ sáng tối đa
-            RemoveFog = true,                -- Xóa sương mù
+            MinimalQuality = true,
+            NoShadows = true,
+            NoReflections = true,
+            SimplifyMaterials = true,
+            CompatibilityMode = true,
+            FullBright = true,
+            RemoveFog = true,
         },
-        
-        -- Object Settings (Cài đặt vật thể)
-        Objects = {
-            RemoveParticles = true,          -- Xóa particle effects
-            RemoveTrails = true,             -- Xóa trails
-            RemoveBeams = true,              -- Xóa beams
-            RemoveLights = true,             -- Xóa lights
-            RemoveDecals = true,             -- Xóa decals/textures
-            RemoveClothes = true,            -- Xóa quần áo
-            RemoveAccessories = true,        -- Xóa phụ kiện
-            RemoveExplosions = true,         -- Tắt explosions
-            RemoveAttachments = true,        -- Xóa attachments
-            SimplifyMeshes = true,           -- Đơn giản hóa mesh
-            MinimalCollision = true,         -- Collision đơn giản nhất
-            MuteSounds = true,               -- Giảm volume âm thanh
-            OptimizeHumanoids = true,        -- Tối ưu humanoids
-        },
-        
-        -- Environment Settings (Cài đặt môi trường)
-        Environment = {
-            SimplifyTerrain = true,          -- Đơn giản hóa địa hình
-            RemoveSky = true,                -- Xóa sky
-            RemoveAtmosphere = true,         -- Xóa atmosphere
-            RemoveClouds = true,             -- Xóa clouds
-            DisableTerrainDecoration = true, -- Tắt terrain decoration
-            MinimizeWater = true,            -- Giảm hiệu ứng nước (KHÔNG xóa)
-        },
-        
-        -- Performance Settings (Cài đặt hiệu năng)
         Performance = {
-            UnlockFPS = true,                -- Mở khóa FPS
-            FPSCap = 999,                    -- Giới hạn FPS (999 = unlimited)
-            DevConsoleBoost = true,          -- Dev console trick
-            ClearNilInstances = true,        -- Dọn nil instances
-            GarbageCollection = true,        -- Garbage collection định kỳ
-            GCInterval = 30,                 -- GC mỗi 30 giây
-            OptimizePhysics = true,          -- Tối ưu physics
-            ReduceDrawDistance = true,       -- Giảm khoảng cách render
-            DisableStreaming = true,         -- Tắt streaming
-            InterpolationThrottle = true,    -- Throttle interpolation
-            BatchSize = 500,                 -- Số objects/batch
-            YieldInterval = 500,             -- Yield sau mỗi X objects
+            UnlockFPS = true,
+            FPSCap = 999,
+            DevConsoleBoost = true,
+            GarbageCollection = true,
+            GCInterval = 30,
+            ClearNilInstances = true,
+            OptimizePhysics = true,
+            SimplifyMeshes = true,
+            MinimalCollision = true,
+            BatchSize = 1000,
         },
-        
-        -- Player Settings (Cài đặt người chơi)
         Player = {
-            IgnoreSelf = true,               -- Không optimize nhân vật mình
-            IgnoreOthers = false,            -- Optimize nhân vật khác
-            IgnoreTools = true,              -- Không xóa tools
+            ProtectSelf = true,
+            SimplifyOthers = false,
         },
-        
-        -- Display Settings (Cài đặt hiển thị)
         Display = {
-            ShowFPSCounter = true,           -- Hiển thị FPS counter
-            ShowMemoryUsage = true,          -- Hiển thị RAM usage
-            ShowPing = true,                 -- Hiển thị ping
-            CounterPosition = "TopRight",    -- Vị trí: TopRight, TopLeft, BottomRight, BottomLeft
-            CounterTransparency = 0.2,       -- Độ trong suốt (0-1)
+            ShowFPS = true,
+            ShowMemory = true,
+            ShowPing = true,
+            ShowDestroyed = true,
+            Position = "TopRight",
+            Transparency = 0.15,
         }
     }
 }
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/Roblox-FPS-Booster/main/ultimatefps.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/GraphicsTuner/main/dotrblx"))()
 ```
 
 -- Step 2: Wait for optimization
@@ -238,17 +215,59 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/Roblox-FPS
 ## ⚙️ Example Reconfigure / Ví dụ chỉnh cấu hình
 
 ```lua
-getgenv().ReconfigureUltimateFPS({
-    Graphics = {
-        RemoveTextures = false,  -- Keep textures (giữ lại texture)
-    },
-    Objects = {
-        RemoveClothes = false,   -- Keep clothes (giữ lại quần áo)
-    },
-    Display = {
-        CounterPosition = "TopLeft"  -- Move FPS counter
+getgenv().GraphicsTuner = {
+    Settings = {
+        GraphicsDestruction = {
+            RemoveParticles = true,
+            RemoveTrails = true,
+            RemoveBeams = true,
+            RemoveLights = true,
+            RemoveTextures = true,
+            RemoveDecals = true,
+            RemoveClothes = true,
+            RemoveAccessories = true,
+            RemoveSky = true,
+            RemoveAtmosphere = true,
+            RemoveClouds = true,
+            RemovePostEffects = true,
+            MuteSounds = true,
+            DisableExplosions = true,
+        },
+        Graphics = {
+            MinimalQuality = true,
+            NoShadows = true,
+            NoReflections = true,
+            SimplifyMaterials = true,
+            CompatibilityMode = true,
+            FullBright = true,
+            RemoveFog = true,
+        },
+        Performance = {
+            UnlockFPS = true,
+            FPSCap = 999,
+            DevConsoleBoost = true,
+            GarbageCollection = true,
+            GCInterval = 30,
+            ClearNilInstances = true,
+            OptimizePhysics = true,
+            SimplifyMeshes = true,
+            MinimalCollision = true,
+            BatchSize = 1000,
+        },
+        Player = {
+            ProtectSelf = true,
+            SimplifyOthers = false,
+        },
+        Display = {
+            ShowFPS = true,
+            ShowMemory = true,
+            ShowPing = true,
+            ShowDestroyed = true,
+            Position = "TopRight",
+            Transparency = 0.15,
+        }
     }
-})
+}
 ```
 
 > 🔧 *Bạn có thể thay đổi các cài đặt này bất kỳ lúc nào trong runtime.*
@@ -299,9 +318,7 @@ getgenv().ReconfigureUltimateFPS({
 ## 🧾 Credits
 
 * **Claude Sonnet 4.5**
-* Based on **V3.0 + V4.0 Analysis**
-* Optimized for **Maximum Stability**
-* **Version: 4.5 ULTIMATE STABLE**
+* **Version: 4.9**
 * License: **MIT**
 
 ---
@@ -323,7 +340,7 @@ Bạn có thể **tự do sử dụng, chỉnh sửa và phân phối** miễn l
 
 ## 🌐 Links
 
-* 🔗 **GitHub Repository:** `https://github.com/Diffone7/r/Roblox-FPS-Booster`
+* 🔗 **GitHub Repository:** `https://github.com/Diffone7/r/GraphicsTuner`
 * 📜 **License:** [MIT](LICENSE)
 
 ---
