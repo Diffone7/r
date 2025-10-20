@@ -1,0 +1,53 @@
+getgenv().GraphicsTuner = getgenv().GraphicsTuner or {
+    Settings = {
+        GraphicsDestruction = {
+            RemoveParticles = true,
+            RemoveTrails = true,
+            RemoveBeams = true,
+            RemoveLights = true,
+            RemoveTextures = true,
+            RemoveDecals = true,
+            RemoveClothes = true,
+            RemoveAccessories = true,
+            RemoveSky = true,
+            RemoveAtmosphere = true,
+            RemoveClouds = true,
+            RemovePostEffects = true,
+            MuteSounds = true,
+            DisableExplosions = true,
+        },
+        Graphics = {
+            MinimalQuality = true,
+            NoShadows = true,
+            NoReflections = true,
+            SimplifyMaterials = true,
+            CompatibilityMode = true,
+            FullBright = true,
+            RemoveFog = true,
+        },
+        Performance = {
+            UnlockFPS = true,
+            FPSCap = 999,
+            DevConsoleBoost = true,
+            GarbageCollection = true,
+            GCInterval = 30,
+            ClearNilInstances = true,
+            OptimizePhysics = true,
+            SimplifyMeshes = true,
+            MinimalCollision = true,
+            BatchSize = 1000,
+        },
+        Player = {
+            ProtectSelf = true,
+            SimplifyOthers = false,
+        },
+        Display = {
+            ShowFPS = true,
+            ShowMemory = true,
+            ShowPing = true,
+            ShowDestroyed = true,
+            Position = "TopRight",
+            Transparency = 0.15,
+        }
+    }
+}
