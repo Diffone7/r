@@ -141,15 +141,95 @@
 
 ## 🧰 Usage / Cách sử dụng
 
-```lua
+
 -- Step 1: Execute in your executor
+
+```lua
+getgenv().UltimateFPS = {
+    Settings = {
+        -- Graphics Settings (Cài đặt đồ họa)
+        Graphics = {
+            MinimalQuality = true,           -- Level 01 quality
+            DisableShadows = true,           -- Tắt bóng đổ
+            DisableReflections = true,       -- Tắt phản chiếu
+            SimplifyMaterials = true,        -- Đơn giản hóa vật liệu
+            RemoveTextures = true,           -- Xóa textures
+            DisablePostProcessing = true,    -- Tắt post effects
+            ForceCompatibilityMode = true,   -- Chế độ tương thích
+            DisableAntiAliasing = true,      -- Tắt khử răng cưa
+            MaximizeBrightness = true,       -- Tăng độ sáng tối đa
+            RemoveFog = true,                -- Xóa sương mù
+        },
+        
+        -- Object Settings (Cài đặt vật thể)
+        Objects = {
+            RemoveParticles = true,          -- Xóa particle effects
+            RemoveTrails = true,             -- Xóa trails
+            RemoveBeams = true,              -- Xóa beams
+            RemoveLights = true,             -- Xóa lights
+            RemoveDecals = true,             -- Xóa decals/textures
+            RemoveClothes = true,            -- Xóa quần áo
+            RemoveAccessories = true,        -- Xóa phụ kiện
+            RemoveExplosions = true,         -- Tắt explosions
+            RemoveAttachments = true,        -- Xóa attachments
+            SimplifyMeshes = true,           -- Đơn giản hóa mesh
+            MinimalCollision = true,         -- Collision đơn giản nhất
+            MuteSounds = true,               -- Giảm volume âm thanh
+            OptimizeHumanoids = true,        -- Tối ưu humanoids
+        },
+        
+        -- Environment Settings (Cài đặt môi trường)
+        Environment = {
+            SimplifyTerrain = true,          -- Đơn giản hóa địa hình
+            RemoveSky = true,                -- Xóa sky
+            RemoveAtmosphere = true,         -- Xóa atmosphere
+            RemoveClouds = true,             -- Xóa clouds
+            DisableTerrainDecoration = true, -- Tắt terrain decoration
+            MinimizeWater = true,            -- Giảm hiệu ứng nước (KHÔNG xóa)
+        },
+        
+        -- Performance Settings (Cài đặt hiệu năng)
+        Performance = {
+            UnlockFPS = true,                -- Mở khóa FPS
+            FPSCap = 999,                    -- Giới hạn FPS (999 = unlimited)
+            DevConsoleBoost = true,          -- Dev console trick
+            ClearNilInstances = true,        -- Dọn nil instances
+            GarbageCollection = true,        -- Garbage collection định kỳ
+            GCInterval = 30,                 -- GC mỗi 30 giây
+            OptimizePhysics = true,          -- Tối ưu physics
+            ReduceDrawDistance = true,       -- Giảm khoảng cách render
+            DisableStreaming = true,         -- Tắt streaming
+            InterpolationThrottle = true,    -- Throttle interpolation
+            BatchSize = 500,                 -- Số objects/batch
+            YieldInterval = 500,             -- Yield sau mỗi X objects
+        },
+        
+        -- Player Settings (Cài đặt người chơi)
+        Player = {
+            IgnoreSelf = true,               -- Không optimize nhân vật mình
+            IgnoreOthers = false,            -- Optimize nhân vật khác
+            IgnoreTools = true,              -- Không xóa tools
+        },
+        
+        -- Display Settings (Cài đặt hiển thị)
+        Display = {
+            ShowFPSCounter = true,           -- Hiển thị FPS counter
+            ShowMemoryUsage = true,          -- Hiển thị RAM usage
+            ShowPing = true,                 -- Hiển thị ping
+            CounterPosition = "TopRight",    -- Vị trí: TopRight, TopLeft, BottomRight, BottomLeft
+            CounterTransparency = 0.2,       -- Độ trong suốt (0-1)
+        }
+    }
+}
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/Roblox-FPS-Booster/main/ultimatefps.lua"))()
+```
 
 -- Step 2: Wait for optimization
+
 -- Output: "OPTIMIZATION COMPLETE"
 
 -- Step 3: Enjoy smoother gameplay!
-```
+
 
 > 💡 *Chạy script, đợi hoàn tất tối ưu, và trải nghiệm game mượt mà hơn.*
 
