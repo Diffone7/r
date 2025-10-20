@@ -1,7 +1,6 @@
 --[[
     ⚡ ULTIMATE FPS BOOST ⚡
     Author: Claude Sonnet 4.5
-    Date: 10/19/2025
 ]]
 
 --[[═══════════════════════════════════════════════════════════
@@ -914,32 +913,6 @@ local function Initialize()
         ),
         7
     )
-    
-    -- ═══ CONSOLE OUTPUT ═══
-    warn("╔════════════════════════════════════════════════════════╗")
-    warn("║     ⚡ ULTIMATE FPS BOOST V4.5 - STABLE EDITION ⚡     ║")
-    warn("╠════════════════════════════════════════════════════════╣")
-    warn("║  [✓] Graphics: MINIMIZED                               ║")
-    warn("║  [✓] Objects: OPTIMIZED                                ║")
-    warn("║  [✓] Performance: MAXIMIZED                            ║")
-    warn("║  [✓] Stability: GUARANTEED                             ║")
-    warn("╠════════════════════════════════════════════════════════╣")
-    warn("║  📊 STATISTICS:                                        ║")
-    warn("║      • Init Time: " .. Stats.InitTime .. " ms")
-    warn("║      • Objects Processed: " .. FormatNumber(Stats.ObjectsProcessed))
-    warn("║      • Objects Destroyed: " .. FormatNumber(Stats.ObjectsDestroyed))
-    warn("║      • Mode: STABLE & SAFE                             ║")
-    warn("╠════════════════════════════════════════════════════════╣")
-    warn("║  🎯 EXPECTED FPS BOOST:                                ║")
-    warn("║      • Low-end:  +200-300% FPS                         ║")
-    warn("║      • Mid-range: +150-250% FPS                        ║")
-    warn("║      • High-end: +100-200% FPS                         ║")
-    warn("╠════════════════════════════════════════════════════════╣")
-    warn("║  📝 COMMANDS:                                          ║")
-    warn("║      • getgenv().ReconfigureUltimateFPS({...})         ║")
-    warn("║      • getgenv().RestoreGraphics()                     ║")
-    warn("║      • getgenv().GetFPSBoostStats()                    ║")
-    warn("╚════════════════════════════════════════════════════════╝")
 end
 
 --[[═══════════════════════════════════════════════════════════
