@@ -633,7 +633,7 @@ end
 --end
 
 task.spawn(function()
-    while task.wait(5) do
+    while task.wait(3.5) do
         if Workspace.ScriptedMap.PlantExtractor.UI.GUI.Timer.Text == "Ready!" and GlobalEnv.autoclaim == true then
             AutoInteract()
         end
