@@ -344,7 +344,7 @@ end)
 
 -- Equip tool function (OPTIMIZED)
 local function EquipTool(toolNameFragment)
-
+    local character = LocalPlayer.Character
     local lowerFragment = string.lower(toolNameFragment)
     local matchingTools = {}
     
@@ -446,13 +446,12 @@ task.spawn(function()
                 if CheckForTool(titleLabel.Text) then
                     local character = LocalPlayer.Character
                     if character and character:FindFirstChild("HumanoidRootPart") then
+                            local root = character:FindFirstChild("HumanoidRootPart")
+        local originalCFrame = root.CFrame
                         character.HumanoidRootPart.CFrame = PLATFORM_POSITIONS[i]
                         task.wait(0.2)
                         EquipTool(titleLabel.Text)
                         task.wait(0.5)
-                            local character = LocalPlayer.Character
-    local root = character:FindFirstChild("HumanoidRootPart")
-        local originalCFrame = root.CFrame
         root.CFrame = originalCFrame
         task.wait()
                     end
