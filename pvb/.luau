@@ -123,6 +123,51 @@ Tabs.Event:AddButton({
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/refs/heads/main/GraphicsTuner/main/dotrblx"))()
 end
 })
+local function delt(objectType)
+    local myPlot = GetPlayerPlot()
+    if not myPlot then 
+        warn("⚠️ Cannot find your plot!")
+        return 0 
+    end
+    
+    local count = 0
+    local validPlots = {"1", "2", "3", "4", "5", "6"}
+    
+    for _, plotNumber in ipairs(validPlots) do
+        if plotNumber ~= myPlot then
+            local plot = Plots:FindFirstChild(plotNumber)
+            if plot then
+                local folder = plot:FindFirstChild(objectType)
+                if folder then
+                    pcall(function()
+                        for _, obj in ipairs(folder:GetChildren()) do
+                            pcall(function() 
+                                obj:Destroy() 
+                                count = count + 1 
+                            end)
+                        end
+                    end)
+                end
+            end
+        end
+    end
+    
+    return count
+end
+Tabs.Event:AddButton({
+    Title = "Delete others' brainrot",
+    Description = "Similar to FPS boost but only for brainrot",
+    Callback = function()
+        delt("Brainrots")
+    end
+})
+Tabs.Event:AddButton({
+    Title = "Delete others' plant",
+    Description = "Similar to FPS boost but only for plants",
+    Callback = function()
+        delt("Plants")
+    end
+})
 -- Seed dropdown
 local SeedDropdown = Tabs.Main:AddDropdown("seed", {
     Title = "Select seed to buy",
