@@ -472,9 +472,26 @@ local function UpdateMonitor()
                     GUI.FPS.TextColor3 = Color3.fromRGB(255, 0, 0)
                 end
             end
-            if GUI.MEM and gcinfo then
-                GUI.MEM.Text = "RAM: " .. math.floor(gcinfo() / 1024) .. " MB"
+if GUI.MEM then
+    local mem = 0
+
+    local success1 = pcall(function()
+        mem = math.floor(stats():GetTotalMemoryUsageMb())
+    end)
+    if not success1 then
+        local success2 = pcall(function()
+            local MB = game:GetService("CoreGui").DevConsoleMaster.DevConsoleWindow.DevConsoleUI.TopBar.LiveStatsModule.MemoryUsage_MB.Text
+            local matched = MB:match("%d+")
+            if matched then
+                mem = tonumber(matched) or 0
             end
+        end)
+    end
+
+    if mem and mem >= 0 then
+        GUI.MEM.Text = "RAM: " .. mem .. " MB"
+    end
+end
             if GUI.PNG then
                 pcall(function()
                     local p = math.floor(S.Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
