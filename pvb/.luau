@@ -118,7 +118,7 @@ Tabs.Main:AddButton({
 })
 Tabs.Event:AddButton({
     Title = "FPS boost",
-    Description = "",
+    Description = "Not recommended",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/refs/heads/main/GraphicsTuner/main/dotrblx"))()
 end
@@ -155,14 +155,14 @@ local function delt(objectType)
     return count
 end
 Tabs.Event:AddButton({
-    Title = "Delete others' brainrot",
+    Title = "Delete others' brainrot (recommended)",
     Description = "Similar to FPS boost but only for brainrot",
     Callback = function()
         delt("Brainrots")
     end
 })
 Tabs.Event:AddButton({
-    Title = "Delete others' plant",
+    Title = "Delete others' plant (recommended)",
     Description = "Similar to FPS boost but only for plants",
     Callback = function()
         delt("Plants")
