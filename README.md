@@ -198,7 +198,7 @@ getgenv().GraphicsTuner = {
         }
     }
 }
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/GraphicsTuner/main/dotrblx"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Diffone7/r/refs/heads/main/GraphicsTuner/dotrblx"))()
 ```
 
 -- Step 2: Wait for optimization
