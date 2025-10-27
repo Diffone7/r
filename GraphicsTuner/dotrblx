@@ -1,0 +1,606 @@
+getgenv().GraphicsTuner = getgenv().GraphicsTuner or {
+    Settings = {
+        GraphicsDestruction = {
+            RemoveParticles = true,
+            RemoveTrails = true,
+            RemoveBeams = true,
+            RemoveLights = true,
+            RemoveTextures = true,
+            RemoveDecals = true,
+            RemoveClothes = true,
+            RemoveAccessories = true,
+            RemoveSky = true,
+            RemoveAtmosphere = true,
+            RemoveClouds = true,
+            RemovePostEffects = true,
+            MuteSounds = true,
+            DisableExplosions = true,
+        },
+        Graphics = {
+            MinimalQuality = true,
+            NoShadows = true,
+            NoReflections = true,
+            SimplifyMaterials = true,
+            CompatibilityMode = true,
+            FullBright = true,
+            RemoveFog = true,
+        },
+        Performance = {
+            UnlockFPS = true,
+            FPSCap = 999,
+            DevConsoleBoost = true,
+            GarbageCollection = true,
+            GCInterval = 30,
+            ClearNilInstances = true,
+            OptimizePhysics = true,
+            SimplifyMeshes = true,
+            MinimalCollision = true,
+            BatchSize = 1000,
+        },
+        Player = {
+            ProtectSelf = true,
+            SimplifyOthers = false,
+        },
+        Display = {
+            ShowFPS = true,
+            ShowMemory = true,
+            ShowPing = true,
+            ShowDestroyed = true,
+            Position = "TopRight",
+            Transparency = 0.15,
+        }
+    }
+}
+
+local S = setmetatable({}, {
+    __index = function(t, k)
+        local s = game:GetService(k)
+        rawset(t, k, s)
+        return s
+    end
+})
+
+local P = S.Players.LocalPlayer
+local Set = GraphicsTuner.Settings
+local Cam = workspace.CurrentCamera
+
+local Stats = {
+    Start = 0,
+    Processed = 0,
+    Destroyed = 0,
+    Protected = 0,
+    InitMs = 0
+}
+
+local function ShouldProtect(obj)
+    local cn = obj.ClassName
+    if cn:find("Gui") or cn:find("Frame") or cn:find("Button") or cn:find("Label") or cn:find("Box") or cn:find("List") or cn:find("Scroll") or cn:find("Text") or cn:find("Image") then
+        return true
+    end
+    if cn == "BillboardGui" or cn == "SurfaceGui" then
+        return true
+    end
+    if P.PlayerGui and obj:IsDescendantOf(P.PlayerGui) then
+        return true
+    end
+    local ok, result = pcall(function()
+        return obj:IsDescendantOf(S.CoreGui)
+    end)
+    if ok and result then return true end
+    if cn == "ProximityPrompt" or cn == "ClickDetector" then
+        return true
+    end
+    if cn == "TouchTransmitter" or obj:FindFirstChild("TouchInterest") then
+        return true
+    end
+    if cn == "Script" or cn == "LocalScript" or cn == "ModuleScript" then
+        return true
+    end
+    if cn == "RemoteEvent" or cn == "RemoteFunction" then
+        return true
+    end
+    if cn == "BindableEvent" or cn == "BindableFunction" then
+        return true
+    end
+    if cn:find("Value") then
+        return true
+    end
+    if cn == "Animation" or cn == "Animator" or cn == "AnimationController" or cn == "AnimationTrack" then
+        return true
+    end
+    if obj:IsA("Sound") then
+        return true
+    end
+    if cn == "Humanoid" then
+        return true
+    end
+    if Set.Player.ProtectSelf and P.Character then
+        if obj:IsDescendantOf(P.Character) then
+            return true
+        end
+    end
+    if cn == "Tool" or cn == "BackpackItem" or obj:FindFirstAncestorWhichIsA("Tool") then
+        return true
+    end
+    return false
+end
+
+local function OptimizeGraphics()
+    pcall(function()
+        local R = settings():GetService("RenderSettings")
+        local U = UserSettings():GetService("UserGameSettings")
+        R.QualityLevel = Enum.QualityLevel.Level01
+        R.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level01
+        R.EagerBulkExecution = false
+        R.FrameRateManager = Enum.FramerateManagerMode.Automatic
+        U.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
+        U.GraphicsQualityLevel = 1
+        if sethiddenproperty then
+            sethiddenproperty(R, "EnableFRM", true)
+            sethiddenproperty(R, "AutoFRMLevel", 1)
+            sethiddenproperty(R, "DebugFRMQualityLevelOverride", 1)
+        end
+        workspace.LevelOfDetail = Enum.ModelLevelOfDetail.Disabled
+        if sethiddenproperty then
+            sethiddenproperty(workspace, "MeshPartHeads", Enum.MeshPartHeads.Disabled)
+            sethiddenproperty(workspace, "AnimationThrottlingEnabled", true)
+            sethiddenproperty(workspace, "SignalBehavior", Enum.SignalBehavior.Immediate)
+        end
+        local L = S.Lighting
+        L.GlobalShadows = false
+        L.ShadowSoftness = 0
+        L.EnvironmentDiffuseScale = 0
+        L.EnvironmentSpecularScale = 0
+        if Set.Graphics.FullBright then
+            L.Brightness = 3
+            L.OutdoorAmbient = Color3.new(1, 1, 1)
+            L.Ambient = Color3.new(1, 1, 1)
+        end
+        if Set.Graphics.RemoveFog then
+            L.FogEnd = 9e9
+            L.FogStart = 9e9
+        end
+        if Set.Graphics.CompatibilityMode and sethiddenproperty then
+            sethiddenproperty(L, "Technology", Enum.Technology.Compatibility)
+        end
+        local T = workspace:FindFirstChildOfClass("Terrain")
+        if T then
+            T.WaterWaveSize = 0
+            T.WaterWaveSpeed = 0
+            T.WaterReflectance = 0
+            T.WaterTransparency = 0.9
+            T.Decoration = false
+        end
+        S.MaterialService.Use2022Materials = false
+    end)
+end
+
+local function UnlockFPS()
+    if setfpscap then
+        setfpscap(Set.Performance.FPSCap)
+    end
+end
+
+local function DevConsoleBoost()
+    pcall(function()
+        local VIM = S.VirtualInputManager
+        game.DescendantAdded:Connect(function(d)
+            if d.Name == "MainView" and d.Parent and d.Parent.Name == "DevConsoleUI" then
+                task.wait(0.05)
+                if d.Parent.Parent.Parent then
+                    d.Parent.Parent.Parent.Enabled = false
+                end
+            end
+        end)
+        VIM:SendKeyEvent(true, "F9", false, game)
+        task.wait(0.05)
+        VIM:SendKeyEvent(false, "F9", false, game)
+        task.spawn(function()
+            while task.wait(2) do warn("") end
+        end)
+    end)
+end
+
+local function SetupGC()
+    pcall(function()
+        for i = 1, 3 do
+            collectgarbage("collect")
+            task.wait(0.05)
+        end
+        task.spawn(function()
+            while task.wait(Set.Performance.GCInterval) do
+                collectgarbage("collect")
+            end
+        end)
+    end)
+end
+
+local function ClearNilInstances()
+    if getnilinstances then
+        pcall(function()
+            local nil_objs = getnilinstances()
+            for _, obj in ipairs(nil_objs) do
+                pcall(function()
+                    if not ShouldProtect(obj) then
+                        obj:Destroy()
+                        Stats.Destroyed = Stats.Destroyed + 1
+                    end
+                end)
+            end
+        end)
+    end
+end
+
+local function OptimizeObject(obj)
+    if ShouldProtect(obj) then
+        Stats.Protected = Stats.Protected + 1
+        if obj:IsA("Sound") and Set.GraphicsDestruction.MuteSounds then
+            pcall(function()
+                obj.Volume = obj.Volume * 0.2
+            end)
+        end
+        return
+    end
+    local cn = obj.ClassName
+    Stats.Processed = Stats.Processed + 1
+    pcall(function()
+        if Set.GraphicsDestruction.RemoveParticles then
+            if cn == "ParticleEmitter" or cn == "Fire" or cn == "Smoke" or cn == "Sparkles" then
+                obj:Destroy()
+                Stats.Destroyed = Stats.Destroyed + 1
+                return
+            end
+        end
+        if Set.GraphicsDestruction.RemoveTrails and cn == "Trail" then
+            obj:Destroy()
+            Stats.Destroyed = Stats.Destroyed + 1
+            return
+        end
+        if Set.GraphicsDestruction.RemoveBeams and cn == "Beam" then
+            obj:Destroy()
+            Stats.Destroyed = Stats.Destroyed + 1
+            return
+        end
+        if Set.GraphicsDestruction.RemoveLights then
+            if cn == "PointLight" or cn == "SpotLight" or cn == "SurfaceLight" then
+                obj:Destroy()
+                Stats.Destroyed = Stats.Destroyed + 1
+                return
+            end
+        end
+        if Set.GraphicsDestruction.RemoveClothes then
+            if cn == "Shirt" or cn == "Pants" or cn == "ShirtGraphic" then
+                obj:Destroy()
+                Stats.Destroyed = Stats.Destroyed + 1
+                return
+            end
+        end
+        if Set.GraphicsDestruction.RemoveAccessories then
+            if obj:IsA("Accessory") or obj:IsA("Hat") or cn == "CharacterMesh" or cn == "SurfaceAppearance" or cn == "BaseWrap" then
+                obj:Destroy()
+                Stats.Destroyed = Stats.Destroyed + 1
+                return
+            end
+        end
+        if Set.GraphicsDestruction.RemoveSky and cn == "Sky" then
+            obj:Destroy()
+            Stats.Destroyed = Stats.Destroyed + 1
+            return
+        end
+        if Set.GraphicsDestruction.RemoveAtmosphere and cn == "Atmosphere" then
+            obj:Destroy()
+            Stats.Destroyed = Stats.Destroyed + 1
+            return
+        end
+        if Set.GraphicsDestruction.RemoveClouds and cn == "Clouds" then
+            obj:Destroy()
+            Stats.Destroyed = Stats.Destroyed + 1
+            return
+        end
+        if Set.GraphicsDestruction.RemovePostEffects and obj:IsA("PostEffect") then
+            obj:Destroy()
+            Stats.Destroyed = Stats.Destroyed + 1
+            return
+        end
+        if obj:IsA("BasePart") then
+            if Set.Graphics.SimplifyMaterials then
+                obj.Material = Enum.Material.SmoothPlastic
+            end
+            if Set.Graphics.NoShadows then
+                obj.CastShadow = false
+            end
+            if Set.Graphics.NoReflections then
+                obj.Reflectance = 0
+            end
+            obj.TopSurface = Enum.SurfaceType.Smooth
+            obj.BottomSurface = Enum.SurfaceType.Smooth
+            if cn == "MeshPart" then
+                if Set.Performance.SimplifyMeshes then
+                    obj.RenderFidelity = Enum.RenderFidelity.Performance
+                end
+                if Set.Performance.MinimalCollision then
+                    obj.CollisionFidelity = Enum.CollisionFidelity.Box
+                end
+                if Set.GraphicsDestruction.RemoveTextures then
+                    obj.TextureID = ""
+                end
+                obj.DoubleSided = false
+            end
+            if cn == "UnionOperation" then
+                if Set.Performance.SimplifyMeshes then
+                    obj.RenderFidelity = Enum.RenderFidelity.Performance
+                end
+                if Set.Performance.MinimalCollision then
+                    obj.CollisionFidelity = Enum.CollisionFidelity.Box
+                end
+                obj.UsePartColor = true
+            end
+        end
+        if cn == "SpecialMesh" and Set.GraphicsDestruction.RemoveTextures then
+            obj.TextureId = ""
+        end
+        if cn == "Model" then
+            obj.LevelOfDetail = Enum.ModelLevelOfDetail.Disabled
+        end
+        if cn == "Explosion" and Set.GraphicsDestruction.DisableExplosions then
+            obj.BlastPressure = 0
+            obj.BlastRadius = 0
+            obj.Visible = false
+        end
+        if Set.GraphicsDestruction.RemoveDecals then
+            if cn == "Decal" or cn == "Texture" then
+                obj.Transparency = 1
+            end
+        end
+    end)
+end
+
+local GUI = {}
+
+local function CreateMonitor()
+    if not Set.Display.ShowFPS then return end
+    pcall(function()
+        local old = P.PlayerGui:FindFirstChild("GraphicsTunerMonitor")
+        if old then old:Destroy() end
+        local sg = Instance.new("ScreenGui")
+        sg.Name = "GraphicsTunerMonitor"
+        sg.ResetOnSpawn = false
+        sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        local h = 70
+        if Set.Display.ShowMemory then h = h + 18 end
+        if Set.Display.ShowPing then h = h + 18 end
+        if Set.Display.ShowDestroyed then h = h + 18 end
+        local f = Instance.new("Frame")
+        f.Size = UDim2.new(0, 155, 0, h)
+        f.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        f.BackgroundTransparency = Set.Display.Transparency
+        f.BorderSizePixel = 0
+        if Set.Display.Position == "TopRight" then
+            f.Position = UDim2.new(1, -165, 0, 10)
+        elseif Set.Display.Position == "TopLeft" then
+            f.Position = UDim2.new(0, 10, 0, 10)
+        elseif Set.Display.Position == "BottomRight" then
+            f.Position = UDim2.new(1, -165, 1, -h - 10)
+        else
+            f.Position = UDim2.new(0, 10, 1, -h - 10)
+        end
+        f.Parent = sg
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 8)
+        c.Parent = f
+        local t = Instance.new("TextLabel")
+        t.Size = UDim2.new(1, 0, 0, 24)
+        t.BackgroundTransparency = 1
+        t.TextColor3 = Color3.fromRGB(0, 255, 100)
+        t.TextSize = 14
+        t.Font = Enum.Font.GothamBold
+        t.Text = "⚡ Graphics Tuner"
+        t.Parent = f
+        local fps = Instance.new("TextLabel")
+        fps.Size = UDim2.new(1, -10, 0, 22)
+        fps.Position = UDim2.new(0, 5, 0, 24)
+        fps.BackgroundTransparency = 1
+        fps.TextColor3 = Color3.fromRGB(0, 255, 0)
+        fps.TextSize = 18
+        fps.Font = Enum.Font.GothamBold
+        fps.Text = "FPS: --"
+        fps.TextXAlignment = Enum.TextXAlignment.Left
+        fps.Parent = f
+        GUI.FPS = fps
+        local y = 46
+        if Set.Display.ShowMemory then
+            local mem = Instance.new("TextLabel")
+            mem.Size = UDim2.new(1, -10, 0, 16)
+            mem.Position = UDim2.new(0, 5, 0, y)
+            mem.BackgroundTransparency = 1
+            mem.TextColor3 = Color3.fromRGB(100, 200, 255)
+            mem.TextSize = 12
+            mem.Font = Enum.Font.Gotham
+            mem.Text = "RAM: -- MB"
+            mem.TextXAlignment = Enum.TextXAlignment.Left
+            mem.Parent = f
+            GUI.MEM = mem
+            y = y + 18
+        end
+        if Set.Display.ShowPing then
+            local png = Instance.new("TextLabel")
+            png.Size = UDim2.new(1, -10, 0, 16)
+            png.Position = UDim2.new(0, 5, 0, y)
+            png.BackgroundTransparency = 1
+            png.TextColor3 = Color3.fromRGB(255, 200, 100)
+            png.TextSize = 12
+            png.Font = Enum.Font.Gotham
+            png.Text = "PING: -- ms"
+            png.TextXAlignment = Enum.TextXAlignment.Left
+            png.Parent = f
+            GUI.PNG = png
+            y = y + 18
+        end
+        if Set.Display.ShowDestroyed then
+            local dst = Instance.new("TextLabel")
+            dst.Size = UDim2.new(1, -10, 0, 16)
+            dst.Position = UDim2.new(0, 5, 0, y)
+            dst.BackgroundTransparency = 1
+            dst.TextColor3 = Color3.fromRGB(255, 100, 100)
+            dst.TextSize = 11
+            dst.Font = Enum.Font.Gotham
+            dst.Text = "KILLED: " .. Stats.Destroyed
+            dst.TextXAlignment = Enum.TextXAlignment.Left
+            dst.Parent = f
+            GUI.DST = dst
+        end
+        sg.Parent = P.PlayerGui
+    end)
+end
+
+local function UpdateMonitor()
+    if not GUI.FPS then return end
+    local last = tick()
+    local frames = 0
+    S.RunService.RenderStepped:Connect(function()
+        frames = frames + 1
+        local now = tick()
+        if now - last >= 0.4 then
+            local fps = math.floor(frames / (now - last))
+            if GUI.FPS then
+                GUI.FPS.Text = "FPS: " .. fps
+                if fps >= 60 then
+                    GUI.FPS.TextColor3 = Color3.fromRGB(0, 255, 0)
+                elseif fps >= 30 then
+                    GUI.FPS.TextColor3 = Color3.fromRGB(255, 255, 0)
+                else
+                    GUI.FPS.TextColor3 = Color3.fromRGB(255, 0, 0)
+                end
+            end
+if GUI.MEM then
+    local mem = 0
+
+    local success1 = pcall(function()
+        mem = math.floor(stats():GetTotalMemoryUsageMb())
+    end)
+    if not success1 then
+        local success2 = pcall(function()
+            local MB = game:GetService("CoreGui").DevConsoleMaster.DevConsoleWindow.DevConsoleUI.TopBar.LiveStatsModule.MemoryUsage_MB.Text
+            local matched = MB:match("%d+")
+            if matched then
+                mem = tonumber(matched) or 0
+            end
+        end)
+    end
+
+    if mem and mem >= 0 then
+        GUI.MEM.Text = "RAM: " .. mem .. " MB"
+    end
+end
+            if GUI.PNG then
+                pcall(function()
+                    local p = math.floor(S.Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+                    GUI.PNG.Text = "PING: " .. p .. " ms"
+                    if p < 100 then
+                        GUI.PNG.TextColor3 = Color3.fromRGB(0, 255, 0)
+                    elseif p < 200 then
+                        GUI.PNG.TextColor3 = Color3.fromRGB(255, 255, 0)
+                    else
+                        GUI.PNG.TextColor3 = Color3.fromRGB(255, 0, 0)
+                    end
+                end)
+            end
+            if GUI.DST then
+                GUI.DST.Text = "KILLED: " .. Stats.Destroyed
+            end
+            frames = 0
+            last = now
+        end
+    end)
+end
+
+local function Notify(title, text, dur)
+    pcall(function()
+        S.StarterGui:SetCore("SendNotification", {
+            Title = "⚡ " .. title,
+            Text = text,
+            Duration = dur or 3
+        })
+    end)
+end
+
+local function Init()
+    Stats.Start = tick()
+    Notify("Graphics Tuner", "✅ Protecting ALL UI & Functions...", 2)
+    if not game:IsLoaded() then
+        game.Loaded:Wait()
+    end
+    Notify("Phase 1/4", "🎨 Graphics optimization...", 2)
+    OptimizeGraphics()
+    Notify("Phase 2/4", "⚡ Performance boost...", 2)
+    UnlockFPS()
+    DevConsoleBoost()
+    SetupGC()
+    ClearNilInstances()
+    local objs = game:GetDescendants()
+    Notify("Phase 3/4", "💀 Destroying graphics...", 2)
+    local batch = Set.Performance.BatchSize
+    for i, obj in ipairs(objs) do
+        OptimizeObject(obj)
+        if i % batch == 0 then
+            task.wait()
+        end
+    end
+    Notify("Phase 4/4", "📊 Setting up monitor...", 2)
+    CreateMonitor()
+    UpdateMonitor()
+    game.DescendantAdded:Connect(function(obj)
+        task.delay(0.05, function()
+            OptimizeObject(obj)
+        end)
+    end)
+    Stats.InitMs = math.floor((tick() - Stats.Start) * 1000)
+    Notify("✅ COMPLETE", string.format("⏱️ %dms | 🛡️ UI Safe | 💀 %d killed", Stats.InitMs, Stats.Destroyed), 6)
+end
+
+getgenv().GetStats = function()
+    return {
+        InitTime = Stats.InitMs,
+        Processed = Stats.Processed,
+        Destroyed = Stats.Destroyed,
+        Protected = Stats.Protected,
+        ProtectionRate = string.format("%.1f%%", (Stats.Protected / (Stats.Processed + Stats.Protected)) * 100)
+    }
+end
+
+getgenv().ToggleFPS = function()
+    local g = P.PlayerGui:FindFirstChild("GraphicsTunerMonitor")
+    if g then
+        g.Enabled = not g.Enabled
+        Notify("👁️", g.Enabled and "Shown" or "Hidden", 10)
+    end
+end
+
+getgenv().ForceClean = function()
+    local before = gcinfo and gcinfo() or 0
+    collectgarbage("collect")
+    local after = gcinfo and gcinfo() or 0
+    local freed = math.floor(before - after)
+    Notify("🗑️ Cleaned", freed .. " KB freed", 2)
+    return freed
+end
+
+getgenv().RestoreGraphics = function()
+    pcall(function()
+        local R = settings():GetService("RenderSettings")
+        R.QualityLevel = Enum.QualityLevel.Automatic
+        S.Lighting.GlobalShadows = true
+        Notify("🔧 Restored", "Graphics restored to default", 3)
+    end)
+end
+
+getgenv().AdjustSettings = function(category, setting, value)
+    if Set[category] and Set[category][setting] ~= nil then
+        Set[category][setting] = value
+        Notify("⚙️ Updated", category .. "." .. setting .. " = " .. tostring(value), 3)
+        return true
+    end
+    return false
+end
+
+Init()
