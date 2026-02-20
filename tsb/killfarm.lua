@@ -1,10 +1,10 @@
 getgenv().FollowConfig = {
-    FlySpeed          = 500,
-    FlyAltitude       = 300,
+    FlySpeed          = 400,
+    FlyAltitude       = -130,
     LandOffsetX       = 0,
-    LandOffsetY       = 1.6,
-    LandOffsetZ       = 3.9,
-    LockOnDistance    = 50,
+    LandOffsetY       = 1.5,
+    LandOffsetZ       = 3.81,
+    LockOnDistance    = 75,
     SafeModeAltitude  = 300,
     SafeModeTrigger   = 0.2,
     SafeModeKey       = Enum.KeyCode.E,
@@ -56,13 +56,49 @@ local safeModeEnabled      = true
 local safeModeTriggered    = false
 local safeAltitudeBase     = nil
 
--- ============================================================
--- NOCLIP V3
--- ============================================================
-local noclipState      = false
-local partCache        = {}
-local steppedConn      = nil
-local descendantConn   = nil
+local noclipState    = false
+local partCache      = {}
+local steppedConn    = nil
+local descendantConn = nil
+local originalIds    = {}
+
+local NOCLIP_ID      = 2
+local DEFAULT_ID     = 1
+
+local function GetPartGroupId(part)
+    local id = DEFAULT_ID
+    pcall_fn(function()
+        id = gethiddenproperty(part, "CollisionGroupId") or DEFAULT_ID
+    end)
+    return id
+end
+
+local function SetPartGroupId(part, id)
+    pcall_fn(function()
+        sethiddenproperty(part, "CollisionGroupId", id)
+    end)
+end
+
+local function RebuildPartCache(character)
+    partCache   = {}
+    originalIds = {}
+    if not character then return end
+    for _, descendant in ipairs_fn(character:GetDescendants()) do
+        if descendant:IsA("BasePart") then
+            table.insert(partCache, descendant)
+        end
+    end
+    if descendantConn then descendantConn:Disconnect() end
+    descendantConn = character.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("BasePart") then
+            table.insert(partCache, descendant)
+            if noclipState then
+                originalIds[descendant] = GetPartGroupId(descendant)
+                SetPartGroupId(descendant, NOCLIP_ID)
+            end
+        end
+    end)
+end
 
 local function PushPhysicsState(character)
     pcall_fn(function()
@@ -84,34 +120,17 @@ local function RestorePhysicsState(character)
     end)
 end
 
-local function RebuildPartCache(character)
-    partCache = {}
-    if not character then return end
-
-    for _, descendant in ipairs_fn(character:GetDescendants()) do
-        if descendant:IsA("BasePart") then
-            table.insert(partCache, descendant)
-        end
-    end
-
-    if descendantConn then descendantConn:Disconnect() end
-    descendantConn = character.DescendantAdded:Connect(function(descendant)
-        if descendant:IsA("BasePart") then
-            table.insert(partCache, descendant)
-            if noclipState then
-                pcall_fn(function() descendant.CanCollide = false end)
-            end
-        end
-    end)
-end
-
 local function ApplyNoclipFrame()
     for i = #partCache, 1, -1 do
         local part = partCache[i]
         if part and part.Parent then
             pcall_fn(function()
-                if part.CanCollide then
-                    part.CanCollide = false
+                local current = GetPartGroupId(part)
+                if current ~= NOCLIP_ID then
+                    if not originalIds[part] then
+                        originalIds[part] = current
+                    end
+                    SetPartGroupId(part, NOCLIP_ID)
                 end
             end)
         else
@@ -121,13 +140,25 @@ local function ApplyNoclipFrame()
 end
 
 local function SetNoclip(state)
+    if not CFG.NoclipMode then
+        noclipState = false
+        return
+    end
+
     noclipState = state
     local character = LocalPlayer.Character
     if not character then return end
 
     if state then
         PushPhysicsState(character)
-
+        for _, part in ipairs_fn(partCache) do
+            if part and part.Parent then
+                pcall_fn(function()
+                    originalIds[part] = GetPartGroupId(part)
+                    SetPartGroupId(part, NOCLIP_ID)
+                end)
+            end
+        end
         if steppedConn then steppedConn:Disconnect() end
         steppedConn = RunService.Stepped:Connect(SafeCloneFunc(function()
             if not noclipState then return end
@@ -138,14 +169,15 @@ local function SetNoclip(state)
             steppedConn:Disconnect()
             steppedConn = nil
         end
-
-        RestorePhysicsState(character)
-
         for _, part in ipairs_fn(partCache) do
             if part and part.Parent then
-                pcall_fn(function() part.CanCollide = true end)
+                pcall_fn(function()
+                    SetPartGroupId(part, originalIds[part] or DEFAULT_ID)
+                end)
             end
         end
+        originalIds = {}
+        RestorePhysicsState(character)
     end
 end
 
@@ -156,7 +188,6 @@ LocalPlayer.CharacterAdded:Connect(function(character)
         PushPhysicsState(character)
     end
 end)
-
 if LocalPlayer.Character then
     RebuildPartCache(LocalPlayer.Character)
 end
@@ -333,7 +364,8 @@ local function ExecuteArcTravel()
     if travelActive then return end
     travelActive = true
 
-    local selfRoot   = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local selfChar = LocalPlayer.Character
+    local selfRoot = selfChar and selfChar:FindFirstChild("HumanoidRootPart")
     local targetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
 
     if not selfRoot or not targetRoot then
@@ -341,38 +373,63 @@ local function ExecuteArcTravel()
         return
     end
 
-    local function AnimateTween(part, destination)
+    local function LerpToPivot(destination)
         if safeModeTriggered or not followActive then return false end
-
-        local dist     = (part.Position - destination.Position).Magnitude
-        local duration = math.max(dist / CFG.FlySpeed, 0.05)
-        local info     = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-
         if activeTween then activeTween:Cancel() end
-        activeTween = TweenService:Create(part, info, {CFrame = destination})
-        activeTween:Play()
-        activeTween.Completed:Wait()
-        return true
+
+        local startCF   = selfRoot.CFrame
+        local dist      = (selfRoot.Position - destination.Position).Magnitude
+        local duration  = math.max(dist / CFG.FlySpeed, 0.05)
+        local elapsed   = 0
+        local completed = false
+
+        local conn
+        conn = RunService.Heartbeat:Connect(SafeCloneFunc(function(dt)
+            if safeModeTriggered or not followActive or not travelActive then
+                conn:Disconnect()
+                completed = true
+                return
+            end
+
+            elapsed = elapsed + dt
+            local alpha = math.min(elapsed / duration, 1)
+
+            pcall_fn(function()
+                selfChar:PivotTo(startCF:Lerp(destination, alpha))
+                selfRoot.Velocity    = Vector3.zero
+                selfRoot.RotVelocity = Vector3.zero
+            end)
+
+            if alpha >= 1 then
+                conn:Disconnect()
+                completed = true
+            end
+        end))
+
+        while not completed do
+            task.wait()
+        end
+        return followActive and not safeModeTriggered
     end
 
     StatusLabel.Text = "Status: Ascending..."
     local ascendPos   = selfRoot.Position + Vector3.new(0, CFG.FlyAltitude, 0)
     local ascendFrame = CFrame.new(ascendPos) * selfRoot.CFrame.Rotation
-    if not AnimateTween(selfRoot, ascendFrame) then travelActive = false return end
+    if not LerpToPivot(ascendFrame) then travelActive = false return end
 
     StatusLabel.Text = "Status: Flying to target..."
     targetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
     if not targetRoot then travelActive = false return end
 
     local overheadFrame = CFrame.new(targetRoot.Position.X, ascendPos.Y, targetRoot.Position.Z)
-    if not AnimateTween(selfRoot, overheadFrame) then travelActive = false return end
+    if not LerpToPivot(overheadFrame) then travelActive = false return end
 
     StatusLabel.Text = "Status: Landing..."
     targetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
     if not targetRoot then travelActive = false return end
 
     local landFrame = targetRoot.CFrame * CFrame.new(CFG.LandOffsetX, CFG.LandOffsetY, CFG.LandOffsetZ)
-    if not AnimateTween(selfRoot, landFrame) then travelActive = false return end
+    if not LerpToPivot(landFrame) then travelActive = false return end
 
     travelActive = false
 end
